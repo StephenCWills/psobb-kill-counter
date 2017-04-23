@@ -16,3 +16,7 @@ instructions on how to obtain the dinput8.dll and where to place it.
 Afterward, place the Kill Counter addon (that is, the entirety of the Kill Counter folder)
 right alongside the Character Reader and Monster HP addons provided by the PSOBBMod-Addons
 project, in the imgui folder.
+
+## Screenshots
+![forest.jpg](screenshots/forest.jpg)
+![caves.jpg](screenshots/caves.jpg)
