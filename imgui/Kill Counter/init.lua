@@ -1,6 +1,6 @@
 -- Author: Stephen Wills (https://github.com/Solybum)
--- From: PSOBBMod-Addons (https://github.com/StephenCWills/PSOBBMod-Addons)
--- License: GPL-3.0 (https://github.com/StephenCWills/PSOBBMod-Addons/blob/master/LICENSE)
+-- From: PSOBBMod-Addons (https://github.com/StephenCWills/psobb-kill-counter)
+-- License: GPL-3.0 (https://github.com/StephenCWills/psobb-kill-counter/blob/master/LICENSE)
 
 -- This addon copies files from the lib folder of Soly's
 -- PSOBBMod-Addons project so that this addon will remain
