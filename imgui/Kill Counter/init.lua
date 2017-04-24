@@ -136,6 +136,9 @@ local present = function()
 end
 
 local init = function()
+    file = io.open(cfgFileName, "a")
+    io.close(file)
+    
     pattern = "(%d+),(%d+),(%d+),(%d+),(%d+)"
     file = io.open(cfgFileName, "r")
     io.input(file)
