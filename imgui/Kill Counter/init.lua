@@ -7,31 +7,31 @@
 -- compatible with his addons as he continues making
 -- changes. Appropriate attribution is provided in
 -- the comment block the top of each file.
-helpers = require("Kill Counter.helpers")
-unitxt = require("Kill Counter.Unitxt")
-monsters = require("Kill Counter.Monsters")
+local helpers = require("Kill Counter.helpers")
+local unitxt = require("Kill Counter.Unitxt")
+local monsters = require("Kill Counter.Monsters")
 
-cfgFileName = "kill-counters.txt"
-cfgFontColor = 0xFFFFFFFF
-cfgFontSize = 1.0
+local cfgFileName = "kill-counters.txt"
+local cfgFontColor = 0xFFFFFFFF
+local cfgFontSize = 1.0
 
-_PlayerCount = 0x00AAE168
-_Difficulty = 0x00A9CD68
-_Episode = 0x00A9B1C8
-_Area = 0x00AC9CF8
+local _PlayerCount = 0x00AAE168
+local _Difficulty = 0x00A9CD68
+local _Episode = 0x00A9B1C8
+local _Area = 0x00AC9CF8
 
-_MonsterCount = 0x00AAE164
-_MonsterArray = 0x00AAD720
+local _MonsterCount = 0x00AAE164
+local _MonsterArray = 0x00AAD720
 
-_MonsterPosX = 0x38
-_MonsterPosY = 0x3C
-_MonsterPosZ = 0x40
-_MonsterID = 0x378
-_MonsterHP = 0x334
-_MonsterHPMax = 0x2BC
+local _MonsterPosX = 0x38
+local _MonsterPosY = 0x3C
+local _MonsterPosZ = 0x40
+local _MonsterID = 0x378
+local _MonsterHP = 0x334
+local _MonsterHPMax = 0x2BC
 
-_MonsterTable = {}
-_KillTable = {}
+local _MonsterTable = {}
+local _KillTable = {}
 
 local function readMonsters()
     difficulty = pso.read_u32(_Difficulty)
