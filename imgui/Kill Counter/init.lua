@@ -1,4 +1,4 @@
--- Author: Stephen Wills (https://github.com/Solybum)
+-- Author: Stephen Wills (https://github.com/StephenCWills)
 -- From: PSOBBMod-Addons (https://github.com/StephenCWills/psobb-kill-counter)
 -- License: GPL-3.0 (https://github.com/StephenCWills/psobb-kill-counter/blob/master/LICENSE)
 
