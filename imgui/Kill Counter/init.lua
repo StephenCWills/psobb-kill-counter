@@ -324,7 +324,7 @@ local init = function()
     return 
     {
         name = "Kill Counter",
-        version = "1.0.0",
+        version = "1.1.0",
         author = "staphen"
     }
 end
