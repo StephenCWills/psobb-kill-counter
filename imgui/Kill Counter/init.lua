@@ -6,7 +6,7 @@
 -- PSOBBMod-Addons project so that this addon will remain
 -- compatible with his addons as he continues making
 -- changes. Appropriate attribution is provided in
--- the comment block the top of each file.
+-- the comment block the at top of each file.
 local helpers = require("Kill Counter.helpers")
 local unitxt = require("Kill Counter.Unitxt")
 local monsters = require("Kill Counter.Monsters")
@@ -19,6 +19,7 @@ local _PlayerCount = 0x00AAE168
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
 local _Area = 0x00AC9CF8
+local _SectionID = 0x00A9C4D8
 
 local _MonsterCount = 0x00AAE164
 local _MonsterArray = 0x00AAD720
@@ -30,95 +31,263 @@ local _MonsterID = 0x378
 local _MonsterHP = 0x334
 local _MonsterHPMax = 0x2BC
 
+local _CurrentDifficulty = 0
+local _CurrentEpisode = 0
+local _CurrentSectionID = 0
+local _CurrentArea = 0
+
 local _MonsterTable = {}
-local _KillTable = {}
+local _AllCounters = {}
+local _VisibleCounters = {}
+local _CountersByID = {}
 
-local function readMonsters()
-    difficulty = pso.read_u32(_Difficulty)
-    episode = pso.read_u32(_Episode)
-    area = pso.read_u32(_Area)
-    killTableKey = string.format("%d,%d,%d", difficulty, episode, area)
-    killTable = _KillTable[killTableKey] or {}
+local function GetVisibleCounter(areaCounter)
+    local matchedCounters = {}
+    local visibleCounter = {}
     
-    playerCount = pso.read_u32(_PlayerCount)
-    monsterCount = pso.read_u32(_MonsterCount)
-    monsterTable = {}
-    modified = false
+    local i
+    local counter
+    
+    for i,counter in ipairs(_AllCounters) do
+        local isMatch =
+            counter.difficulty == areaCounter.difficulty and
+            counter.episode == areaCounter.episode and
+            counter.sectionID == areaCounter.sectionID and
+            counter.monsterID == areaCounter.monsterID
+            
+        if isMatch then
+            table.insert(matchedCounters, counter)
+        end
+    end
+    
+    for k,v in pairs(areaCounter) do
+        visibleCounter[k] = v
+    end
+    
+    visibleCounter.kills = function()
+        local sum = 0
+        
+        for i,counter in ipairs(matchedCounters) do
+            sum = sum + counter.kills
+        end
+        
+        return sum
+    end
+    
+    return visibleCounter
+end
 
-    for i=1,monsterCount,1 do
-        mAddr = pso.read_u32(_MonsterArray + 4 * (i - 1 + playerCount))
+local function BuildAllCounters()
+    _AllCounters = {}
 
+    local file = io.open(cfgFileName, "a")
+    io.close(file)
+    
+    local pattern = "(%d+),(%d+),(%d+),(%d+),(%d+),(%d+)"
+    file = io.open(cfgFileName, "r")
+    io.input(file)
+    
+    local difficulty
+    local episode
+    local sectionID
+    local area
+    local monsterID
+    local kills
+    
+    for difficulty,episode,sectionID,area,monsterID,kills in string.gfind(io.read("*all"), pattern) do
+        difficulty = tonumber(difficulty)
+        episode = tonumber(episode)
+        sectionID = tonumber(sectionID)
+        area = tonumber(area)
+        monsterID = tonumber(monsterID)
+        kills = tonumber(kills)
+        
+        local counter = {
+            difficulty = difficulty,
+            episode = episode,
+            sectionID = sectionID,
+            area = area,
+            monsterID = monster.id,
+            monsterName = unitxt.GetMonsterName(monster.id, difficulty == 3),
+            monsterColor = (monsters.m[monster.id] or { 0xFFFFFFFF })[1],
+            kills = kills
+        }
+        
+        table.insert(_AllCounters, counter)
+    end
+    
+    io.close(file)
+end
+
+local function BuildVisibleCounters()
+    _VisibleCounters = {}
+    
+    local difficulty = pso.read_u32(_Difficulty)
+    local episode = pso.read_u32(_Episode)
+    local sectionID = pso.read_u32(_SectionID)
+    local area = pso.read_u32(_Area)
+    
+    local visibleTable = {}
+    local i
+    local counter
+    
+    for i,counter in ipairs(_AllCounters) do
+        local isMatch =
+            counter.difficulty == difficulty and
+            counter.episode == episode and
+            counter.sectionID == sectionID and
+            counter.area == area
+            
+        if isMatch then
+            table.insert(_VisibleCounters, GetVisibleCounter(counter))
+        end
+    end
+end
+
+local function BuildCountersByID()
+    _CountersByID = {}
+
+    local difficulty = pso.read_u32(_Difficulty)
+    local episode = pso.read_u32(_Episode)
+    local sectionID = pso.read_u32(_SectionID)
+    local area = pso.read_u32(_Area)
+    
+    local i
+    local counter
+    
+    for i,counter in ipairs(_AllCounters) do
+        local isMatch =
+            counter.difficulty == difficulty and
+            counter.episode == episode and
+            counter.sectionID == sectionID and
+            counter.area == area
+            
+        if isMatch then
+            _CountersByID[counter.monsterID] = counter
+        end
+    end
+end
+
+local function GetMonsterTable()
+    local i
+    local monsterTable = {}
+
+    local playerCount = pso.read_u32(_PlayerCount)
+    local entityCount = pso.read_u32(_EntityCount)
+
+    for i=1,entityCount,1 do
+        local mAddr = pso.read_u32(_EntityArray + 4 * (i - 1 + playerCount))
+
+        -- If we got a pointer, then read from it
         if mAddr ~= 0 then
-            mID = pso.read_u32(mAddr + _MonsterID)
+            -- Get monster data
+            local mUnitxtID = pso.read_u32(mAddr + _MonsterUnitxtID)
+            local mHP = pso.read_u16(mAddr + _MonsterHP)
+            local mSlain = mHP == 0 or (_MonsterTable[mAddr] ~= nil and _MonsterTable[mAddr].slain)
 
-            if mID ~= 0 then
-                --mPosX = pso.read_f32(mAddr + _MonsterPosX)
-                --mPosY = pso.read_f32(mAddr + _MonsterPosY)
-                --mPosZ = pso.read_f32(mAddr + _MonsterPosZ)
-                mHP = pso.read_u16(mAddr + _MonsterHP)
-                --mHPMax = pso.read_u16(mAddr + _MonsterHPMax)
-                
-                monsterTable[mAddr] = mHP
-                
-                if mHP == 0 and _MonsterTable[mAddr] and _MonsterTable[mAddr] ~= 0 then
-                    if killTable[mID] == nil then
-                        killTable[mID] = 1
-                    else
-                        killTable[mID] = killTable[mID] + 1
-                    end
-                    
-                    modified = true
-                end
-                
-                -- Rappies get back up after they are killed so we
-                -- can't indiscriminately update the monster table
-                if _MonsterTable[mAddr] == 0 then
-                    monsterTable[mAddr] = 0
-                end
+            monsterTable[mAddr] = { id = mUnitxtID, slain = mSlain }
+        end
+    end
+
+    return monsterTable
+end
+
+local function UpdateKillTable(monsterTable)
+    local difficulty = pso.read_u32(_Difficulty)
+    local episode = pso.read_u32(_Episode)
+    local sectionID = pso.read_u32(_SectionID)
+    local area = pso.read_u32(_Area)
+    local tableModified = false
+    
+    local mAddr
+    local monster
+    
+    for mAddr,monster in pairs(monsterTable) do
+        local incrementCounter =
+            monsterTable[mAddr].slain and
+            _MonsterTable[mAddr] ~= nil and
+            not _MonsterTable[mAddr].slain
+        
+        if incrementCounter then
+            if _CountersByID[monster.id] then
+                _CountersByID[monster.id].kills = _CountersByID[monster.id].kills + 1
+            else
+                local counter = {
+                    difficulty = difficulty,
+                    episode = episode,
+                    sectionID = sectionID,
+                    area = area,
+                    monsterID = monster.id,
+                    monsterName = unitxt.GetMonsterName(monster.id, difficulty == 3),
+                    monsterColor = (monsters.m[monster.id] or { 0xFFFFFFFF })[1],
+                    kills = 1
+                }
+            
+                table.insert(_AllCounters, counter)
+                table.insert(_VisibleCounters, GetVisibleCounter(counter))
+                _CountersByID[monster.id] = counter
             end
-        end
-    end
-    
-    _MonsterTable = monsterTable
-
-    imgui.Columns(2)
-    helpers.imguiTextLine("Monster", 0xFFFFFFFF)
-    imgui.NextColumn()
-    helpers.imguiTextLine("Kills", 0xFFFFFFFF)
-    imgui.NextColumn()
-
-    for mID,killCount in pairs(killTable) do
-        mName = unitxt.ReadMonsterName(mID, difficulty)
-        mColor = 0xFFFFFFFF
-        mDisplay = true
-
-        if monsters.m[mID] ~= nil then
-            mColor = monsters.m[mID][1]
-            mDisplay = monsters.m[mID][2]
-        end
-        
-        if mDisplay == true then
-            helpers.imguiTextLine(string.format("%s", mName), mColor)
-            imgui.NextColumn()
-            helpers.imguiTextLine(string.format("%d", killCount), cfgFontColor)
-            imgui.NextColumn()
+            
+            tableModified = true
         end
     end
         
-    if modified then
-        _KillTable[killTableKey] = killTable
-    
-        file = io.open(cfgFileName, "w+")
+    if tableModified then
+        local i
+        local counter
+        local file = io.open(cfgFileName, "w+")
         io.output(file)
         
-        for killTableKey,killTable in pairs(_KillTable) do
-            for mID,killCount in pairs(killTable) do
-                io.write(string.format("%s,%d,%d\n", killTableKey, mID, killCount))
-            end
+        for i,counter in pairs(_AllCounters) do
+            io.write(string.format("%d,%d,%d,%d,%d,%d\n", counter.difficulty, counter.episode, counter.sectionID, counter.area, counter.monsterID, counter.kills))
         end
         
         io.close(file)
     end
+    
+    return tableModified
+end
+
+local function PrintCounters(monsterTable)
+    local i
+    local counter
+    
+    imgui.Columns(2)
+    helpers.imguiText("Monster", cfgFontColor, true)
+    imgui.NextColumn()
+    helpers.imguiText("Kills", cfgFontColor, true)
+    imgui.NextColumn()
+
+    for i,counter in ipairs(_VisibleCounters) do
+        local display = not monsters.m[counter.monsterID] or monsters.m[counter.monsterID][2]
+        
+        if display then
+            helpers.imguiText(string.format("%s", counter.monsterName), counter.monsterColor, true)
+            imgui.NextColumn()
+            helpers.imguiText(string.format("%d", counter.kills()), cfgFontColor, true)
+            imgui.NextColumn()
+        end
+    end
+end
+
+local function AreaHasChanged()
+    local difficulty = pso.read_u32(_Difficulty)
+    local episode = pso.read_u32(_Episode)
+    local sectionID = pso.read_u32(_SectionID)
+    local area = pso.read_u32(_Area)
+    
+    local areaHasChanged =
+        difficulty ~= _CurrentDifficulty or
+        episode ~= _CurrentEpisode or
+        sectionID ~= _CurrentSectionID or
+        area ~= _CurrentArea
+        
+    _CurrentDifficulty = difficulty
+    _CurrentEpisode = episode
+    _CurrentSectionID = sectionID
+    _CurrentArea = area
+    
+    return areaHasChanged
 end
 
 local present = function()
@@ -128,32 +297,29 @@ local present = function()
     if imgui.Button("Reset") then
         file = io.open(cfgFileName, "w+")
         io.close(file)
-        _KillTable = {}
+        
+        _AllCounters = {}
+        _VisibleCounters = {}
+        _CountersByID = {}
     end
     
-    readMonsters()
+    if AreaHasChanged() then
+        BuildVisibleCounters()
+        BuildCountersByID()
+    end
+    
+    local monsterTable = GetMonsterTable()
+    UpdateKillTable(monsterTable)
+    PrintCounters(monsterTable)
+    _MonsterTable = monsterTable
+    
     imgui.End()
 end
 
 local init = function()
-    file = io.open(cfgFileName, "a")
-    io.close(file)
-    
-    pattern = "(%d+),(%d+),(%d+),(%d+),(%d+)"
-    file = io.open(cfgFileName, "r")
-    io.input(file)
-    
-    for difficulty,episode,area,mID,killCount in string.gfind(io.read("*all"), pattern) do
-        killTableKey = string.format("%s,%s,%s", difficulty, episode, area)
-        killTable = _KillTable[killTableKey] or {}
-        
-        mID = tonumber(mID)
-        killCount = tonumber(killCount)
-        killTable[mID] = killCount
-        _KillTable[killTableKey] = killTable
-    end
-    
-    io.close(file)
+    BuildAllCounters()
+    BuildVisibleCounters()
+    BuildCountersByID()
 
     return 
     {
