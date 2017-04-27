@@ -107,9 +107,9 @@ local function BuildAllCounters()
             episode = episode,
             sectionID = sectionID,
             area = area,
-            monsterID = monster.id,
-            monsterName = unitxt.GetMonsterName(monster.id, difficulty == 3),
-            monsterColor = (monsters.m[monster.id] or { 0xFFFFFFFF })[1],
+            monsterID = monsterID,
+            monsterName = unitxt.GetMonsterName(monsterID, difficulty == 3),
+            monsterColor = (monsters.m[monsterID] or { 0xFFFFFFFF })[1],
             kills = kills
         }
         
