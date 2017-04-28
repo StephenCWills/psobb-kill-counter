@@ -27,15 +27,11 @@ local _Episode = 0x00A9B1C8
 local _Area = 0x00AC9CF8
 local _SectionID = 0x00A9C4D8
 
-local _MonsterCount = 0x00AAE164
-local _MonsterArray = 0x00AAD720
+local _EntityCount = 0x00AAE164
+local _EntityArray = 0x00AAD720
 
-local _MonsterPosX = 0x38
-local _MonsterPosY = 0x3C
-local _MonsterPosZ = 0x40
-local _MonsterID = 0x378
+local _MonsterUnitxtID = 0x378
 local _MonsterHP = 0x334
-local _MonsterHPMax = 0x2BC
 
 local _CurrentDifficulty = 0
 local _CurrentEpisode = 0
