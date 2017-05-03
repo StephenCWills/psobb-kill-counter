@@ -43,6 +43,14 @@ local _AllCounters = {}
 local _VisibleCounters = {}
 local _CountersByID = {}
 
+local function GetMonsterName(counter)
+    if counter.monsterName == nil then
+        counter.monsterName = unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
+    end
+
+    return counter.monsterName or string.format("%d", counter.monsterID)
+end
+
 local function GetCounterOrder(counter1, counter2)
     if counter1.difficulty ~= counter2.difficulty then
         return counter1.difficulty < counter2.difficulty
@@ -60,7 +68,7 @@ local function GetCounterOrder(counter1, counter2)
         return counter1.area < counter2.area
     end
 
-    return counter1.monsterName < counter2.monsterName
+    return GetMonsterName(counter1) < GetMonsterName(counter2)
 end
 
 local function GetVisibleCounter(areaCounter)
@@ -130,7 +138,6 @@ local function BuildAllCounters()
             sectionID = sectionID,
             area = area,
             monsterID = monsterID,
-            monsterName = unitxt.GetMonsterName(monsterID, difficulty == 3),
             monsterColor = (monsters.m[monsterID] or { 0xFFFFFFFF })[1],
             kills = kills
         }
@@ -149,7 +156,6 @@ local function BuildVisibleCounters()
     local sectionID = pso.read_u32(_SectionID)
     local area = pso.read_u32(_Area)
 
-    local visibleTable = {}
     local i
     local counter
 
@@ -242,7 +248,6 @@ local function UpdateKillTable(monsterTable)
                     sectionID = sectionID,
                     area = area,
                     monsterID = monster.id,
-                    monsterName = unitxt.GetMonsterName(monster.id, difficulty == 3),
                     monsterColor = (monsters.m[monster.id] or { 0xFFFFFFFF })[1],
                     kills = 1
                 }
@@ -287,7 +292,7 @@ local function PrintCounters(monsterTable)
         local display = monsters.m[counter.monsterID] == nil or monsters.m[counter.monsterID][2]
 
         if display then
-            helpers.imguiText(string.format("%s", counter.monsterName), counter.monsterColor, true)
+            helpers.imguiText(GetMonsterName(counter), counter.monsterColor, true)
             imgui.NextColumn()
             helpers.imguiText(string.format("%d", counter.kills()), cfgFontColor, true)
             imgui.NextColumn()
@@ -310,7 +315,7 @@ local function ExportCounters()
         episode = episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
         sectionID = sectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
         area = areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
-        monster = counter.monsterName
+        monster = GetMonsterName(counter)
 
         io.write(string.format(lineFormat,
             difficulty,
