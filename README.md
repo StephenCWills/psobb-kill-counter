@@ -7,16 +7,12 @@ Some of the scripts used for this project were taken directly from there.
 Attribution for each file is provided in a header comment at the top of each file.
 
 ## Installation
-This addon depends on the [dinput8.dll plugin](https://github.com/HybridEidolon/psobbaddonplugin),
-provided by [HybridEidolon](https://github.com/HybridEidolon). A modified version of this dll can
-be obtained from the [PSOBBMod-Addons](https://github.com/Solybum/PSOBBMod-Addons) project,
-provided by [Solybum](https://github.com/Solybum). Please refer to the PSOBBMod-Addons project for
-instructions on how to obtain the dinput8.dll and where to place it.
-
-Afterward, download [this zip file](https://github.com/StephenCWills/psobb-kill-counter/archive/master.zip)
-and place the Kill Counter addon (that is, the entirety of the Kill Counter folder)
-right alongside the Character Reader and Monster HP addons provided by the PSOBBMod-Addons
-project, in the imgui folder.
+* Download [version 0.3.1](https://github.com/HybridEidolon/psobbaddonplugin/releases/tag/v0.3.1)
+  of the [psobbaddonplugin](https://github.com/HybridEidolon/psobbaddonplugin) project (bbmod.zip)
+* Extract the `dinput8.dll` file and place it in the root directory of your PSO installation
+* Extract the `addons` folder in the root directory of your PSO installation as well
+* Download [psobb-kill-counter-master.zip](https://github.com/StephenCWills/psobb-kill-counter/archive/master.zip)
+* Extract the `staphen` folder and place it in the `addons` folder that you copied to your PSO root directory
 
 ## Screenshots
 ![forest.jpg](screenshots/forest.jpg)
