@@ -10,7 +10,7 @@ Attribution for each file is provided in a header comment at the top of each fil
 * Download [version 0.3.1](https://github.com/HybridEidolon/psobbaddonplugin/releases/tag/v0.3.1)
   of the [psobbaddonplugin](https://github.com/HybridEidolon/psobbaddonplugin) project (bbmod.zip)
 * Extract the `dinput8.dll` file and place it in the root directory of your PSO installation
-* Extract the `addons` folder in the root directory of your PSO installation as well
+* Extract the `addons` folder and place it in the root directory of your PSO installation as well
 * Download [psobb-kill-counter-master.zip](https://github.com/StephenCWills/psobb-kill-counter/archive/master.zip)
 * Extract the `staphen` folder and place it in the `addons` folder that you copied to your PSO root directory
 
