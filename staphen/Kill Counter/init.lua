@@ -7,14 +7,14 @@
 -- compatible with his addons as he continues making
 -- changes. Appropriate attribution is provided in
 -- the comment block the at top of each file.
-local helpers = require("Kill Counter.helpers")
-local unitxt = require("Kill Counter.Unitxt")
+local helpers = require("staphen.Kill Counter.helpers")
+local unitxt = require("staphen.Kill Counter.Unitxt")
 
-local difficulties = require("Kill Counter.difficulties")
-local episodes = require("Kill Counter.episodes")
-local sectionIDs = require("Kill Counter.section-ids")
-local areas = require("Kill Counter.areas")
-local monsters = require("Kill Counter.Monsters")
+local difficulties = require("staphen.Kill Counter.difficulties")
+local episodes = require("staphen.Kill Counter.episodes")
+local sectionIDs = require("staphen.Kill Counter.section-ids")
+local areas = require("staphen.Kill Counter.areas")
+local monsters = require("staphen.Kill Counter.Monsters")
 
 local cfgFileName = "kill-counters.txt"
 local cfgExportFileName = "kill-counters-export.txt"
@@ -349,7 +349,7 @@ local function AreaHasChanged()
     return areaHasChanged
 end
 
-local present = function()
+local function present()
     imgui.Begin("Kill Counter")
     imgui.SetWindowFontScale(cfgFontSize)
 
@@ -381,7 +381,7 @@ local present = function()
     imgui.End()
 end
 
-local init = function()
+local function init()
     BuildAllCounters()
     BuildVisibleCounters()
     BuildCountersByID()
@@ -389,16 +389,16 @@ local init = function()
     return
     {
         name = "Kill Counter",
-        version = "1.1.0",
-        author = "staphen"
+        version = "1.1.1",
+        author = "staphen",
+        description = "Tracks numbers of enemy kills",
+        present = present
     }
 end
 
-pso.on_init(init)
-pso.on_present(present)
-
 return {
-    init = init,
-    present = present,
+    __addon = {
+        init = init
+    }
 }
 
