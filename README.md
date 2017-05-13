@@ -7,7 +7,7 @@ Some of the scripts used for this project were taken directly from there.
 Attribution for each file is provided in a header comment at the top of each file.
 
 ## Installation
-* Download [version 0.3.1](https://github.com/HybridEidolon/psobbaddonplugin/releases/tag/v0.3.1)
+* Download [version 0.3.3](https://github.com/HybridEidolon/psobbaddonplugin/releases/tag/v0.3.3)
   of the [psobbaddonplugin](https://github.com/HybridEidolon/psobbaddonplugin) project (bbmod.zip)
 * Extract the `dinput8.dll` file and place it in the root directory of your PSO installation
 * Extract the `addons` folder and place it in the root directory of your PSO installation as well
