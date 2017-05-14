@@ -7,14 +7,14 @@
 -- compatible with his addons as he continues making
 -- changes. Appropriate attribution is provided in
 -- the comment block the at top of each file.
-local helpers = require("staphen.Kill Counter.helpers")
-local unitxt = require("staphen.Kill Counter.Unitxt")
+local helpers = require("Kill Counter.helpers")
+local unitxt = require("Kill Counter.Unitxt")
 
-local difficulties = require("staphen.Kill Counter.difficulties")
-local episodes = require("staphen.Kill Counter.episodes")
-local sectionIDs = require("staphen.Kill Counter.section-ids")
-local areas = require("staphen.Kill Counter.areas")
-local monsters = require("staphen.Kill Counter.Monsters")
+local difficulties = require("Kill Counter.difficulties")
+local episodes = require("Kill Counter.episodes")
+local sectionIDs = require("Kill Counter.section-ids")
+local areas = require("Kill Counter.areas")
+local monsters = require("Kill Counter.Monsters")
 
 local cfgFileName = "kill-counters.txt"
 local cfgExportFileName = "kill-counters-export.txt"
@@ -389,16 +389,17 @@ local function init()
     return
     {
         name = "Kill Counter",
-        version = "1.1.1",
+        version = "1.1.2",
         author = "staphen",
-        description = "Tracks numbers of enemy kills",
+        description = "Tracks number of enemies defeated while playing",
         present = present
     }
 end
 
-return {
-    __addon = {
+return
+{
+    __addon =
+    {
         init = init
     }
 }
-
