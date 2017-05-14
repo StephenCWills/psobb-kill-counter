@@ -1,3 +1,7 @@
+--- Author: Soleil Rojas (https://github.com/Solybum)		
+--- From: PSOBBMod-Addons (https://github.com/Solybum/PSOBBMod-Addons)		
+--- License: GPL-3.0 (https://github.com/Solybum/PSOBBMod-Addons/blob/master/LICENSE)
+
 unitxtPointer = 0x00A9CD50
 specialBaseID = 0x005E4CBB
 --unitxtItemName = 0x04
