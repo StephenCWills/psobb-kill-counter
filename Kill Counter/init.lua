@@ -50,6 +50,17 @@ local _VisibleCounters = {}
 local _CountersByID = {}
 local _PanArms = {}
 
+local function GetArea()
+    local area = pso.read_u32(_Area)
+
+    -- Convert Dark Falz' area to Ruins
+    if area == 4 then
+        area = 3
+    end
+
+    return area
+end
+
 local function GetMonsterName(counter)
     if counter.monsterName == nil then
         counter.monsterName = unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
@@ -232,7 +243,7 @@ local function BuildVisibleCounters()
     local difficulty = pso.read_u32(_Difficulty)
     local episode = pso.read_u32(_Episode)
     local sectionID = pso.read_u32(_SectionID)
-    local area = pso.read_u32(_Area)
+    local area = GetArea()
 
     local i
     local counter
@@ -258,7 +269,7 @@ local function BuildCountersByID()
     local difficulty = pso.read_u32(_Difficulty)
     local episode = pso.read_u32(_Episode)
     local sectionID = pso.read_u32(_SectionID)
-    local area = pso.read_u32(_Area)
+    local area = GetArea()
 
     local i
     local counter
@@ -306,7 +317,7 @@ local function UpdateKillTable(monsterTable)
     local difficulty = pso.read_u32(_Difficulty)
     local episode = pso.read_u32(_Episode)
     local sectionID = pso.read_u32(_SectionID)
-    local area = pso.read_u32(_Area)
+    local area = GetArea()
     local tableModified = false
 
     local mAddr
@@ -413,7 +424,7 @@ local function AreaHasChanged()
     local difficulty = pso.read_u32(_Difficulty)
     local episode = pso.read_u32(_Episode)
     local sectionID = pso.read_u32(_SectionID)
-    local area = pso.read_u32(_Area)
+    local area = GetArea()
 
     local areaHasChanged =
         difficulty ~= _CurrentDifficulty or
@@ -469,7 +480,7 @@ local function init()
     return
     {
         name = "Kill Counter",
-        version = "1.2.0",
+        version = "1.2.1",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
