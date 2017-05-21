@@ -32,6 +32,12 @@ local _EntityArray = 0x00AAD720
 
 local _MonsterUnitxtID = 0x378
 local _MonsterHP = 0x334
+local _MonsterDeRolLeHP = 0x6B4
+local _MonsterBarbaRayHP = 0x704
+local _MonsterState = 0x32F
+
+local _FalzStage2ObjectCode = 0x00AF77E0
+local _FalzStage3ObjectCode = 0x00AF7A60
 
 local _CurrentDifficulty = 0
 local _CurrentEpisode = 0
@@ -42,13 +48,85 @@ local _MonsterTable = {}
 local _AllCounters = {}
 local _VisibleCounters = {}
 local _CountersByID = {}
+local _PanArms = {}
 
 local function GetMonsterName(counter)
     if counter.monsterName == nil then
         counter.monsterName = unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
+
+        if counter.monsterName == "Unknown" then
+            counter.monsterName = string.format("Unknown (%d)", counter.monsterID)
+        end
     end
 
     return counter.monsterName or string.format("%d", counter.monsterID)
+end
+
+local function GetMonsterHP(monster)
+    if monster.id == 45 then
+        return pso.read_u16(monster.address + _MonsterDeRolLeHP)
+    elseif monster.id == 73 then
+        return pso.read_u16(monster.address + _MonsterBarbaRayHP)
+    else
+        return pso.read_u16(monster.address + _MonsterHP)
+    end
+end
+
+local function IsSlain(monster)
+    local difficulty = pso.read_u32(_Difficulty)
+    local mAddr = monster.address
+    local alreadySlain = _MonsterTable[mAddr] ~= nil and _MonsterTable[mAddr].slain
+    local mSlain = alreadySlain or monster.hp == 0
+
+    -- Many NPCs have ID of zero
+    if monster.id == 0 then
+        mSlain = false
+    end
+
+    -- Because Poison Lily suicide does not bring HP
+    -- to zero, we need to check the monster state
+    if monster.id == 13 or monster.id == 14 or monster.id == 83 then
+        local mState = pso.read_u16(mAddr + _MonsterState)
+        mSlain = mSlain or mState == 0x0A
+    end
+
+    -- Pan Arms HP is updated when damage is done
+    -- to Hidoom and Migium, but not vice-versa
+    if monster.id == 21 then
+        _PanArms = monster
+    elseif monster.id == 22 and mSlain then
+        _PanArms.slain = false
+    elseif monster.id == 23 and mSlain then
+        _PanArms.slain = false
+    end
+
+    -- Only count De Rol Le's body, not his shells
+    if monster.id == 45 and monster.index ~= 1 then
+        mSlain = false
+    end
+
+    -- Only count Barba Ray's body, not his shells
+    if monster.id == 73 and monster.index ~= 1 then
+        mSlain = false
+    end
+
+    -- Only count Vol Opt's final form
+    if monster.id == 46 and monster.index ~= 34 then
+        mSlain = false
+    end
+
+    -- Check for Dark Falz' death state
+    if monster.id == 47 then
+        local objectCodeOffset = pso.read_u32(mAddr)
+
+        if difficulty == 0 and objectCodeOffset ~= _FalzStage2ObjectCode then
+            mSlain = false
+        elseif difficulty ~= 0 and objectCodeOffset ~= _FalzStage3ObjectCode then
+            mSlain = false
+        end
+    end
+
+    return mSlain
 end
 
 local function GetCounterOrder(counter1, counter2)
@@ -205,17 +283,19 @@ local function GetMonsterTable()
     local playerCount = pso.read_u32(_PlayerCount)
     local entityCount = pso.read_u32(_EntityCount)
 
-    for i=1,entityCount,1 do
-        local mAddr = pso.read_u32(_EntityArray + 4 * (i - 1 + playerCount))
+    for i=1,entityCount do
+        local monster = {}
+
+        monster.index = i
+        monster.address = pso.read_u32(_EntityArray + 4 * (i - 1 + playerCount))
 
         -- If we got a pointer, then read from it
         if mAddr ~= 0 then
             -- Get monster data
-            local mUnitxtID = pso.read_u32(mAddr + _MonsterUnitxtID)
-            local mHP = pso.read_u16(mAddr + _MonsterHP)
-            local mSlain = mHP == 0 or (_MonsterTable[mAddr] ~= nil and _MonsterTable[mAddr].slain)
-
-            monsterTable[mAddr] = { id = mUnitxtID, slain = mSlain }
+            monster.id = pso.read_u32(monster.address + _MonsterUnitxtID)
+            monster.hp = GetMonsterHP(monster)
+            monster.slain = IsSlain(monster)
+            monsterTable[monster.address] = monster
         end
     end
 
@@ -389,7 +469,7 @@ local function init()
     return
     {
         name = "Kill Counter",
-        version = "1.1.2",
+        version = "1.2.0",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
