@@ -36,8 +36,11 @@ local _MonsterDeRolLeHP = 0x6B4
 local _MonsterBarbaRayHP = 0x704
 local _MonsterState = 0x32F
 
+local _VolOptStage2ObjectCode = 0x00AF6220
 local _FalzStage2ObjectCode = 0x00AF77E0
 local _FalzStage3ObjectCode = 0x00AF7A60
+local _GolDragonObjectCode = 0x00AFB860
+local _OlgaStage2ObjectCode = 0x00AF9A00
 
 local _CurrentDifficulty = 0
 local _CurrentEpisode = 0
@@ -49,6 +52,7 @@ local _AllCounters = {}
 local _VisibleCounters = {}
 local _CountersByID = {}
 local _PanArms = {}
+local _SaintMilion = {}
 
 local function GetArea()
     local area = pso.read_u32(_Area)
@@ -122,11 +126,15 @@ local function IsSlain(monster)
     end
 
     -- Only count Vol Opt's final form
-    if monster.id == 46 and monster.index ~= 34 then
-        mSlain = false
+    if monster.id == 46 then
+        local objectCodeOffset = pso.read_u32(mAddr)
+
+        if objectCodeOffset ~= _VolOptStage2ObjectCode then
+            mSlain = false
+        end
     end
 
-    -- Check for Dark Falz' death state
+    -- Only count when last stage of Dark Falz is slain
     if monster.id == 47 then
         local objectCodeOffset = pso.read_u32(mAddr)
 
@@ -137,7 +145,45 @@ local function IsSlain(monster)
         end
     end
 
+    -- Don't count kills for copies of the Gol Dragon
+    if monster.id == 76 then
+        local objectCodeOffset = pso.read_u32(mAddr)
+
+        if objectCodeOffset ~= _GolDragonObjectCode then
+            mSlain = false
+        end
+    end
+
+    -- Only count when last stage of Olga Flow is slain
+    if monster.id == 78 then
+        local objectCodeOffset = pso.read_u32(mAddr)
+
+        if objectCodeOffset ~= _OlgaStage2ObjectCode then
+            mSlain = false
+        end
+    end
+
+    -- Saint-Milion and his variants require special
+    -- logic to be applied after building the monster table
+    if monster.id == 106 or monster.id == 107 or monster.id == 108 then
+        table.insert(_SaintMilion, monster)
+    end
+
     return mSlain
+end
+
+local function IsSaintMilionSlain()
+    local slain = 0
+
+    for i,monster in ipairs(_SaintMilion) do
+        if i <= 4 and monster.slain then
+            slain = slain + 1
+        end
+
+        monster.slain = false
+    end
+
+    return slain == 4
 end
 
 local function GetCounterOrder(counter1, counter2)
@@ -294,6 +340,8 @@ local function GetMonsterTable()
     local playerCount = pso.read_u32(_PlayerCount)
     local entityCount = pso.read_u32(_EntityCount)
 
+    _SaintMilion = {}
+
     for i=1,entityCount do
         local monster = {}
 
@@ -308,6 +356,12 @@ local function GetMonsterTable()
             monster.slain = IsSlain(monster)
             monsterTable[monster.address] = monster
         end
+    end
+
+    -- Apply logic to determine whether to
+    -- increment the kill counter for Saint-Milion
+    if IsSaintMilionSlain() then
+        _SaintMilion[1].slain = true
     end
 
     return monsterTable
@@ -480,7 +534,7 @@ local function init()
     return
     {
         name = "Kill Counter",
-        version = "1.2.1",
+        version = "1.2.2",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
