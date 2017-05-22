@@ -54,6 +54,9 @@ local _CountersByID = {}
 local _PanArms = {}
 local _SaintMilion = {}
 
+local _SortVisibleCounters = false
+local _DetailWindowOpen = false
+
 local function GetArea()
     local area = pso.read_u32(_Area)
 
@@ -71,6 +74,10 @@ local function GetMonsterName(counter)
 
         if counter.monsterName == "Unknown" then
             counter.monsterName = string.format("Unknown (%d)", counter.monsterID)
+        end
+
+        if counter.monsterName ~= nil then
+            _SortVisibleCounters = true
         end
     end
 
@@ -433,6 +440,11 @@ local function PrintCounters(monsterTable)
     helpers.imguiText("Kills", cfgFontColor, true)
     imgui.NextColumn()
 
+    if _SortVisibleCounters then
+        table.sort(_VisibleCounters, GetCounterOrder)
+        _SortVisibleCounters = false
+    end
+
     for i,counter in ipairs(_VisibleCounters) do
         local display = monsters.m[counter.monsterID] == nil or monsters.m[counter.monsterID][2]
 
@@ -494,7 +506,8 @@ local function AreaHasChanged()
     return areaHasChanged
 end
 
-local function present()
+local function ShowMainWindow()
+    imgui.SetNextWindowSize(270, 380, 'FirstUseEver')
     imgui.Begin("Kill Counter")
     imgui.SetWindowFontScale(cfgFontSize)
 
@@ -509,8 +522,8 @@ local function present()
 
     imgui.SameLine(0, 5)
 
-    if imgui.Button("Save to file") then
-        ExportCounters()
+    if imgui.Button("Details...") then
+        _DetailWindowOpen = not _DetailWindowOpen
     end
 
     if AreaHasChanged() then
@@ -526,6 +539,54 @@ local function present()
     imgui.End()
 end
 
+local function ShowDetailWindow()
+    local success
+
+    if not _DetailWindowOpen then
+        return
+    end
+
+    imgui.SetNextWindowSize(800, 400, 'FirstUseEver')
+    success,_DetailWindowOpen = imgui.Begin("Kill Counter Detail", _DetailWindowOpen)
+
+    success,cfgExportFileName = imgui.InputText("", cfgExportFileName, 260)
+    imgui.SameLine(0, 5)
+
+    if imgui.Button("Save to file") then
+        ExportCounters()
+    end
+
+    local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n";
+
+    imgui.Text(string.format(lineFormat, "Difficulty", "Episode", "Section ID", "Area", "Monster", "Kill Count"))
+    imgui.Text(string.format(lineFormat, "----------", "-------", "----------", "----", "-------", "----------"))
+
+    table.sort(_AllCounters, GetCounterOrder)
+
+    for i,counter in ipairs(_AllCounters) do
+        difficulty = difficulties.d[counter.difficulty] or string.format("Unknown (%d)", counter.difficulty)
+        episode = episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
+        sectionID = sectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
+        area = areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
+        monster = GetMonsterName(counter)
+
+        imgui.Text(string.format(lineFormat,
+            difficulty,
+            episode,
+            sectionID,
+            area,
+            monster,
+            string.format("%d", counter.kills)))
+    end
+
+    imgui.End()
+end
+
+local function present()
+    ShowMainWindow()
+    ShowDetailWindow()
+end
+
 local function init()
     BuildAllCounters()
     BuildVisibleCounters()
@@ -534,7 +595,7 @@ local function init()
     return
     {
         name = "Kill Counter",
-        version = "1.2.2",
+        version = "1.2.3",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
