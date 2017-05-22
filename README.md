@@ -22,3 +22,4 @@ file.
 ## Screenshots
 ![forest.jpg](screenshots/forest.jpg)
 ![caves.jpg](screenshots/caves.jpg)
+![detail.jpg](screenshots/detail.jpg)
