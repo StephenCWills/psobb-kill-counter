@@ -7,6 +7,9 @@ Some of the scripts used for this project were taken directly from there.
 Attribution for each file is provided in a header comment at the top of each
 file.
 
+For more in-depth information on how the Kill Counter works, please visit the
+[wiki](https://github.com/StephenCWills/psobb-kill-counter/wiki/How-it-works).
+
 ## Installation
 * Download [version 0.3.3](https://github.com/HybridEidolon/psobbaddonplugin/releases/tag/v0.3.3)
   of the [psobbaddonplugin](https://github.com/HybridEidolon/psobbaddonplugin)
