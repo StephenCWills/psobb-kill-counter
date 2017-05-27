@@ -36,6 +36,7 @@ local _MonsterDeRolLeHP = 0x6B4
 local _MonsterBarbaRayHP = 0x704
 local _MonsterState = 0x32F
 
+local _DubwitchObjectCode = 0x00B267C0
 local _VolOptStage2ObjectCode = 0x00AF6220
 local _FalzStage2ObjectCode = 0x00AF77E0
 local _FalzStage3ObjectCode = 0x00AF7A60
@@ -51,7 +52,9 @@ local _MonsterTable = {}
 local _AllCounters = {}
 local _VisibleCounters = {}
 local _CountersByID = {}
+
 local _PanArms = {}
+local _Dubwitch = {}
 local _SaintMilion = {}
 
 local _SortVisibleCounters = false
@@ -97,8 +100,13 @@ end
 local function IsSlain(monster)
     local difficulty = pso.read_u32(_Difficulty)
     local mAddr = monster.address
-    local alreadySlain = _MonsterTable[mAddr] ~= nil and _MonsterTable[mAddr].slain
-    local mSlain = alreadySlain or monster.hp == 0
+    local mSlain = monster.hp == 0
+
+    -- If monster has already been recorded as
+    -- having been slain, then it is still slain
+    if _MonsterTable[mAddr] ~= nil and _MonsterTable[mAddr].slain then
+        return true
+    end
 
     -- Many NPCs have ID of zero
     if monster.id == 0 then
@@ -120,6 +128,22 @@ local function IsSlain(monster)
         _PanArms.slain = false
     elseif monster.id == 23 and mSlain then
         _PanArms.slain = false
+    end
+
+    -- Individual Dubchics must be slain five
+    -- times before being truly slain
+    if monster.id == 24 then
+        local slainCount = pso.read_u16(mAddr + 0x394)
+
+        if slainCount < 5 then
+            mSlain = false
+        end
+    end
+
+    -- Keep track of slain Dubwitches to
+    -- set slain state of Dubchics later
+    if monster.id == 49 and mSlain then
+        table.insert(_Dubwitch, monster)
     end
 
     -- Only count De Rol Le's body, not his shells
@@ -177,6 +201,21 @@ local function IsSlain(monster)
     end
 
     return mSlain
+end
+
+local function SetDubchicsSlain(monsterTable, dubwitch)
+    local _, monster
+    local dubwitchWave = pso.read_u32(dubwitch.address + 0x28)
+
+    for _,monster in pairs(monsterTable) do
+        if monster.id == 24 then
+            local dubchicWave = pso.read_u32(monster.address + 0x28)
+
+            if dubchicWave == dubwitchWave then
+                monster.slain = true
+            end
+        end
+    end
 end
 
 local function IsSaintMilionSlain()
@@ -347,6 +386,7 @@ local function GetMonsterTable()
     local playerCount = pso.read_u32(_PlayerCount)
     local entityCount = pso.read_u32(_EntityCount)
 
+    _Dubwitch = {}
     _SaintMilion = {}
 
     for i=1,entityCount do
@@ -355,14 +395,29 @@ local function GetMonsterTable()
         monster.index = i
         monster.address = pso.read_u32(_EntityArray + 4 * (i - 1 + playerCount))
 
-        -- If we got a pointer, then read from it
-        if mAddr ~= 0 then
-            -- Get monster data
+        if monster.address ~= 0 then
+            local objectCodeOffset = pso.read_u32(monster.address)
+
             monster.id = pso.read_u32(monster.address + _MonsterUnitxtID)
+
+            -- Dubwitches have an id of zero so we force it to 49
+            -- instead, which is where the Dubwitch unitxt data is
+            if objectCodeOffset == _DubwitchObjectCode then
+                monster.id = 49
+            end
+
             monster.hp = GetMonsterHP(monster)
             monster.slain = IsSlain(monster)
             monsterTable[monster.address] = monster
         end
+    end
+
+    -- Apply logic to set slain state of Dubchics based
+    -- on slain state of the corresponding Dubwitch
+    local _, dubwitch
+
+    for _,dubwitch in ipairs(_Dubwitch) do
+        SetDubchicsSlain(monsterTable, dubwitch)
     end
 
     -- Apply logic to determine whether to
