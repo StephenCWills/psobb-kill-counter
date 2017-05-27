@@ -603,6 +603,7 @@ local function ShowDetailWindow()
 
     imgui.SetNextWindowSize(800, 400, 'FirstUseEver')
     success,_DetailWindowOpen = imgui.Begin("Kill Counter Detail", _DetailWindowOpen)
+    imgui.SetWindowFontScale(cfgFontSize)
 
     success,cfgExportFileName = imgui.InputText("", cfgExportFileName, 260)
     imgui.SameLine(0, 5)
