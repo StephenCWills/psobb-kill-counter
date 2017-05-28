@@ -38,6 +38,7 @@ local _MonsterState = 0x32F
 
 local _DubwitchObjectCode = 0x00B267C0
 local _VolOptStage2ObjectCode = 0x00AF6220
+local _DarvantObjectCode = 0x00AF7D60
 local _FalzStage2ObjectCode = 0x00AF77E0
 local _FalzStage3ObjectCode = 0x00AF7A60
 local _GolDragonObjectCode = 0x00AFB860
@@ -74,6 +75,10 @@ end
 local function GetMonsterName(counter)
     if counter.monsterName == nil then
         counter.monsterName = unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
+
+        if counter.monsterID == 999 then
+            counter.monsterName = "Darvant"
+        end
 
         if counter.monsterName == "Unknown" then
             counter.monsterName = string.format("Unknown (%d)", counter.monsterID)
@@ -404,6 +409,12 @@ local function GetMonsterTable()
             -- instead, which is where the Dubwitch unitxt data is
             if objectCodeOffset == _DubwitchObjectCode then
                 monster.id = 49
+            end
+
+            -- Darvants also have an id of zero, but they don't actually
+            -- have an unitxt ID so we give it a fake ID of 999
+            if objectCodeOffset == _DarvantObjectCode then
+                monster.id = 999
             end
 
             monster.hp = GetMonsterHP(monster)
