@@ -17,13 +17,19 @@ local areas = require("Kill Counter.areas")
 local monsters = require("Kill Counter.Monsters")
 
 local _DataPath = "kill-counters.txt"
+local _SessionsPath = "sessions"
 local _FontScale = 1.0
 
+local _PlayerMyIndex = 0x00A9C4F4
+local _PlayerArray = 0x00A94254
 local _PlayerCount = 0x00AAE168
+local _BankPointer = 0x00A95EE0
+
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
 local _Area = 0x00AC9CF8
 local _SectionID = 0x00A9C4D8
+local _Location = 0x00AAFCA0
 
 local _EntityCount = 0x00AAE164
 local _EntityArray = 0x00AAD720
@@ -48,6 +54,9 @@ local _OlgaStage2ObjectCode = 0x00AF9A00
 local _Dimensions
 local _MonsterTable
 local _GlobalCounter
+local _SessionCounter
+local _Session
+
 local _MainWindow
 local _DetailsWindow
 
@@ -493,19 +502,22 @@ local function KillCounter(dimensions, monsterTable)
         local i
         local counter
         local file = io.open(filePath, "w+")
-        io.output(file)
 
-        for i,counter in pairs(this.all) do
-            io.write(string.format("%d,%d,%d,%d,%d,%d\n",
-                counter.difficulty,
-                counter.episode,
-                counter.sectionID,
-                counter.area,
-                counter.monsterID,
-                counter.kills))
+        if file ~= nil then
+            io.output(file)
+
+            for i,counter in pairs(this.all) do
+                io.write(string.format("%d,%d,%d,%d,%d,%d\n",
+                    counter.difficulty,
+                    counter.episode,
+                    counter.sectionID,
+                    counter.area,
+                    counter.monsterID,
+                    counter.kills))
+            end
+
+            io.close(file)
         end
-
-        io.close(file)
     end
 
     this.deserialize = function(filePath)
@@ -570,6 +582,183 @@ local function KillCounter(dimensions, monsterTable)
         io.close(file)
     end
 
+    this.reset = function()
+        this.all = {}
+        this.visible = {}
+        this.byID = {}
+        this.modified = false
+    end
+
+    return this
+end
+
+local function Session(dimensions, killCounter)
+    local this = {
+        questNumber = 0,
+        mesetaEarned = 0,
+        experienceEarned = 0,
+        modified = false
+    }
+
+    local _meseta = nil
+    local _bankMeseta = nil
+    local _experience = nil
+    local _everBeenModified = false
+
+    local _now = os.time()
+    local _startTimeInDungeon = _now
+    local _timeSpentInDungeon = 0
+
+    local _dimensions = dimensions
+    local _killCounter = killCounter
+
+    local _getQuestNumber = function()
+        local questPtr = pso.read_u32(0xA95AA8)
+
+        if questPtr == 0 then
+            return 0
+        end
+
+        local questData = pso.read_u32(questPtr + 0x19C)
+
+        if questData == 0 then
+            return 0
+        end
+
+        return pso.read_u32(questData + 0x10)
+    end
+
+    local _getPlayerAddress = function()
+        local playerIndex = pso.read_u32(_PlayerMyIndex)
+        return pso.read_u32(_PlayerArray + 4 * playerIndex)
+    end
+
+    local _getPlayerExperience = function(playerAddress)
+        return pso.read_u32(playerAddress + 0xE48)
+    end
+
+    local _getPlayerMeseta = function(playerAddress)
+        return pso.read_u32(playerAddress + 0xE4C)
+    end
+
+    local _getBankMeseta = function()
+        local bank = pso.read_u32(_BankPointer)
+
+        if bank == 0 then
+            return 0
+        end
+
+        return pso.read_u32(bank + 0x4)
+    end
+
+    local _reset = function()
+        this.startTime = _now
+        this.questNumber = 0
+        this.mesetaEarned = 0
+        this.expEarned = 0
+
+        _meseta = nil
+        _bankMeseta = nil
+        _experience = nil
+        _everBeenModified = false
+
+        _startTimeInDungeon = _now
+        _timeSpentInDungeon = 0
+
+        _killCounter.reset()
+    end
+
+    this.startTime = _now
+
+    this.getTimeSpent = function()
+        return _now - this.startTime
+    end
+
+    this.getTimeSpentInDungeon = function()
+        return _timeSpentInDungeon + (_now - _startTimeInDungeon)
+    end
+
+    this.getSessionPath = function(sessionsPath)
+        return sessionsPath .. os.date("%Y-%m-%d\\%H.%m.%S", this.startTime)
+    end
+
+    this.update = function()
+        local now = os.time()
+        local playerCount = pso.read_u32(_PlayerCount)
+        local playerAddress = _getPlayerAddress()
+        local questNumber = _getQuestNumber()
+        local location = pso.read_u32(_Location)
+        local remainder = now - math.floor(now / 5) * 5
+
+        this.modified = false
+
+        if location == 0 then
+            _timeSpentInDungeon = _timeSpentInDungeon + (_now - _startTimeInDungeon)
+            _startTimeInDungeon = now
+        end
+
+        if _everBeenModified and _now ~= now and remainder == 0 then
+            this.modified = true
+        end
+
+        _now = now
+
+        if location == 0xF or playerCount == 0 or playerAddress == 0 then
+            _reset()
+            return
+        end
+
+        if this.questNumber ~= questNumber then
+            _reset()
+            this.questNumber = questNumber
+        end
+
+        local meseta = _getPlayerMeseta(playerAddress)
+        local bankMeseta = _getBankMeseta()
+        local experience = _getPlayerExperience(playerAddress)
+
+        if _meseta ~= nil and _bankMeseta ~= nil and _meseta ~= meseta then
+            this.mesetaEarned = this.mesetaEarned + (meseta - _meseta) + (bankMeseta - _bankMeseta)
+            this.modified = true
+        end
+
+        if _experience ~= nil and _experience ~= experience then
+            this.experienceEarned = this.experienceEarned + (experience - _experience)
+            this.modified = true
+        end
+
+        if _killCounter.modified then
+            this.modified = true
+        end
+
+        if this.modified then
+            _everBeenModified = true
+        end
+
+        _meseta = meseta
+        _bankMeseta = bankMeseta
+        _experience = experience
+    end
+
+    this.serialize = function(sessionPath)
+        local file = io.open(sessionPath, "w+")
+
+        if file ~= nil then
+            io.output(file)
+
+            io.write(string.format("difficulty=%d\n", _dimensions.difficulty))
+            io.write(string.format("episode=%d\n", _dimensions.episode))
+            io.write(string.format("sectionID=%d\n", _dimensions.sectionID))
+            io.write(string.format("quest=%d\n", this.questNumber))
+            io.write(string.format("meseta=%d\n", this.mesetaEarned))
+            io.write(string.format("experience=%d\n", this.experienceEarned))
+            io.write(string.format("timeSpent=%d\n", this.getTimeSpent()))
+            io.write(string.format("timeSpentInDungeon=%d\n", this.getTimeSpentInDungeon()))
+
+            io.close(file)
+        end
+    end
+
     return this
 end
 
@@ -613,8 +802,10 @@ local function MainWindow(fontScale)
         imgui.SetWindowFontScale(this.fontScale)
 
         this.reset = imgui.Button("Reset")
+
         imgui.SameLine(0, 5)
         this.details = imgui.Button("Details...")
+
         _printCounters(killCounter)
 
         imgui.End()
@@ -683,6 +874,9 @@ local function present()
     _Dimensions.update()
     _MonsterTable.update()
     _GlobalCounter.update()
+    _SessionCounter.update()
+    _Session.update()
+
     _MainWindow.update(_GlobalCounter)
     _DetailsWindow.update(_GlobalCounter)
 
@@ -690,12 +884,18 @@ local function present()
         _GlobalCounter.serialize(_DataPath)
     end
 
+    if _Session.modified then
+        local pathPrefix = _SessionsPath .. "\\" .. os.date("%Y%m%d%H%m%S", _Session.startTime)
+        _Session.serialize(pathPrefix .. "-session-counters.txt")
+        _SessionCounter.serialize(pathPrefix .. "-kill-counters.txt")
+    end
+
     if _MainWindow.details then
         _DetailsWindow.open = not _DetailsWindow.open
     end
 
     if _MainWindow.reset then
-        _GlobalCounter = KillCounter(_Dimensions, _MonsterTable)
+        _GlobalCounter.reset()
         _GlobalCounter.serialize(_DataPath)
     end
 end
@@ -704,6 +904,9 @@ local function init()
     _Dimensions = Dimensions()
     _MonsterTable = MonsterTable(_Dimensions)
     _GlobalCounter = KillCounter(_Dimensions, _MonsterTable)
+    _SessionCounter = KillCounter(_Dimensions, _MonsterTable)
+    _Session = Session(_Dimensions, _SessionCounter)
+
     _MainWindow = MainWindow(_FontScale)
     _DetailsWindow = DetailsWindow(_FontScale)
 
