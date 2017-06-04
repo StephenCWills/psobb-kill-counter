@@ -798,7 +798,7 @@ local function Session(dimensions, killCounter)
     return this
 end
 
-local function ConfigurationWindow()
+local function ConfigurationWindow(configuration)
     local this = {
         title = "Kill Counter - Configuration",
         fontScale = 1.0,
@@ -806,9 +806,10 @@ local function ConfigurationWindow()
         globalCounterWindow = nil,
         globalCounterDetailWindow = nil,
         sessionCounterWindow = nil,
-        sessionInfoWindow = nil,
-        modified = false
+        sessionInfoWindow = nil
     }
+
+    local _configuration = configuration
 
     local _showWindowSettings = function()
         local success
@@ -816,24 +817,20 @@ local function ConfigurationWindow()
         if imgui.TreeNodeEx("Windows", "DefaultOpen") then
             if imgui.Checkbox("Global Kill Counters", this.globalCounterWindow.open) then
                 this.globalCounterWindow.open = not this.globalCounterWindow.open
-                this.modified = true
             end
 
             imgui.SameLine(0, 50)
             if imgui.Checkbox("Global Kill Counter Detail", this.globalCounterDetailWindow.open) then
                 this.globalCounterDetailWindow.open = not this.globalCounterDetailWindow.open
-                this.modified = true
             end
 
             if imgui.Checkbox("Session Kill Counters", this.sessionCounterWindow.open) then
                 this.sessionCounterWindow.open = not this.sessionCounterWindow.open
-                this.modified = true
             end
 
             imgui.SameLine(0, 50)
             if imgui.Checkbox("Session Info Counters", this.sessionInfoWindow.open) then
                 this.sessionInfoWindow.open = not this.sessionInfoWindow.open
-                this.modified = true
             end
 
             success,this.fontScale = imgui.InputFloat("Font Scale", this.fontScale)
@@ -851,8 +848,6 @@ local function ConfigurationWindow()
 
         local success
 
-        this.modified = false
-
         imgui.SetNextWindowSize(500, 400, 'FirstUseEver')
         success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
@@ -860,6 +855,15 @@ local function ConfigurationWindow()
         _showWindowSettings()
 
         imgui.End()
+    end
+
+    this.hasChanged = function()
+        return
+            this.globalCounterWindow.open ~= _configuration.globalCounterWindow or
+            this.globalCounterDetailWindow.open ~= _configuration.globalCounterDetailWindow or
+            this.sessionCounterWindow.open ~= _configuration.sessionCounterWindow or
+            this.sessionInfoWindow.open ~= _configuration.sessionInfoWindow or
+            this.fontScale ~= _configuration.fontScale
     end
 
     return this
@@ -1054,7 +1058,7 @@ local function present()
     _SessionCounterWindow.update()
     _SessionInfoWindow.update()
 
-    if _ConfigurationWindow.modified then
+    if _ConfigurationWindow.hasChanged() then
         _Configuration.globalCounterWindow = _GlobalCounterWindow.open
         _Configuration.globalCounterDetailWindow = _GlobalCounterDetailWindow.open
         _Configuration.sessionCounterWindow = _SessionCounterWindow.open
