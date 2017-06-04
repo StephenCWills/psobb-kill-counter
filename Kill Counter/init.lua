@@ -7,18 +7,20 @@
 -- compatible with his addons as he continues making
 -- changes. Appropriate attribution is provided in
 -- the comment block the at top of each file.
-local helpers = require("Kill Counter.helpers")
-local unitxt = require("Kill Counter.Unitxt")
+local _MainMenu = require("core_mainmenu")
+local _Helpers = require("Kill Counter.helpers")
+local _Unitxt = require("Kill Counter.Unitxt")
+local _Success,_Configuration = pcall(require, "Kill Counter.configuration")
 
-local difficulties = require("Kill Counter.difficulties")
-local episodes = require("Kill Counter.episodes")
-local sectionIDs = require("Kill Counter.section-ids")
-local areas = require("Kill Counter.areas")
-local monsters = require("Kill Counter.Monsters")
+local _Difficulties = require("Kill Counter.difficulties")
+local _Episodes = require("Kill Counter.episodes")
+local _SectionIDs = require("Kill Counter.section-ids")
+local _Areas = require("Kill Counter.areas")
+local _Monsters = require("Kill Counter.Monsters")
 
+local _ConfigurationPath = "addons/Kill Counter/configuration.lua"
 local _DataPath = "kill-counters.txt"
 local _SessionsPath = "sessions"
-local _FontScale = 1.0
 
 local _PlayerMyIndex = 0x00A9C4F4
 local _PlayerArray = 0x00A94254
@@ -38,7 +40,7 @@ local _MonsterUnitxtID = 0x378
 local _MonsterHP = 0x334
 local _MonsterDeRolLeHP = 0x6B4
 local _MonsterBarbaRayHP = 0x704
-local _MonsterState = 0x32F
+local _MonsterState = 0x32E
 local _MonsterWave = 0x28
 local _LilySlainState = 0xA
 local _DubchicSlainCount = 0x394
@@ -57,8 +59,38 @@ local _GlobalCounter
 local _SessionCounter
 local _Session
 
-local _MainWindow
-local _DetailsWindow
+local _ConfigurationWindow
+local _GlobalCounterWindow
+local _GlobalCounterDetailWindow
+local _SessionCounterWindow
+
+if not _Success then
+    _Configuration = {
+        globalCounterWindow = false,
+        globalCounterDetailWindow = false,
+        sessionCounterWindow = false,
+        sessionInfoWindow = false,
+        fontScale = 1.0
+    }
+end
+
+_Configuration.serialize = function(configurationPath)
+    local file = io.open(configurationPath, "w+")
+
+    if file ~= nil then
+        io.output(file)
+
+        io.write("return {\n")
+        io.write(string.format("    globalCounterWindow = %s,\n", tostring(_Configuration.globalCounterWindow)))
+        io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
+        io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
+        io.write(string.format("    sessionInfoWindow = %s,\n", tostring(_Configuration.sessionInfoWindow)))
+        io.write(string.format("    fontScale = %f\n", _Configuration.fontScale))
+        io.write("}\n")
+
+        io.close(file)
+    end
+end
 
 local function Dimensions()
     local _getArea = function()
@@ -360,13 +392,13 @@ local function KillCounter(dimensions, monsterTable)
             sectionID = dimensions.sectionID,
             area = dimensions.area,
             monsterID = monster.id,
-            monsterColor = (monsters.m[monster.id] or { 0xFFFFFFFF })[1],
+            monsterColor = (_Monsters.m[monster.id] or { 0xFFFFFFFF })[1],
             kills = 1
         }
 
         counter.getMonsterName = function()
             if _monsterName == nil then
-                _monsterName = unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
+                _monsterName = _Unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
 
                 if _monsterName == 999 then
                     _monsterName = "Darvant"
@@ -498,6 +530,10 @@ local function KillCounter(dimensions, monsterTable)
         end
     end
 
+    this.sort = function()
+        table.sort(this.all, _getCounterOrder)
+    end
+
     this.serialize = function(filePath)
         local i
         local counter
@@ -564,10 +600,10 @@ local function KillCounter(dimensions, monsterTable)
         table.sort(this.all, _getCounterOrder)
 
         for i,counter in ipairs(this.all) do
-            difficulty = difficulties.d[counter.difficulty] or string.format("Unknown (%d)", counter.difficulty)
-            episode = episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
-            sectionID = sectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
-            area = areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
+            difficulty = _Difficulties.d[counter.difficulty] or string.format("Unknown (%d)", counter.difficulty)
+            episode = _Episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
+            sectionID = _SectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
+            area = _Areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
             monster = counter.getMonsterName()
 
             io.write(string.format(lineFormat,
@@ -762,15 +798,83 @@ local function Session(dimensions, killCounter)
     return this
 end
 
-local function MainWindow(fontScale)
+local function ConfigurationWindow()
     local this = {
-        fontScale = fontScale,
-        open = true,
-        reset = false,
-        details = false
+        title = "Kill Counter - Configuration",
+        fontScale = 1.0,
+        open = false,
+        globalCounterWindow = nil,
+        globalCounterDetailWindow = nil,
+        sessionCounterWindow = nil,
+        sessionInfoWindow = nil,
+        modified = false
     }
 
-    local _printCounters = function(killCounter)
+    local _showWindowSettings = function()
+        local success
+
+        if imgui.TreeNodeEx("Windows", "DefaultOpen") then
+            if imgui.Checkbox("Global Kill Counters", this.globalCounterWindow.open) then
+                this.globalCounterWindow.open = not this.globalCounterWindow.open
+                this.modified = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("Global Kill Counter Detail", this.globalCounterDetailWindow.open) then
+                this.globalCounterDetailWindow.open = not this.globalCounterDetailWindow.open
+                this.modified = true
+            end
+
+            if imgui.Checkbox("Session Kill Counters", this.sessionCounterWindow.open) then
+                this.sessionCounterWindow.open = not this.sessionCounterWindow.open
+                this.modified = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("Session Info Counters", this.sessionInfoWindow.open) then
+                this.sessionInfoWindow.open = not this.sessionInfoWindow.open
+                this.modified = true
+            end
+
+            success,this.fontScale = imgui.InputFloat("Font Scale", this.fontScale)
+            this.globalCounterWindow.fontScale = this.fontScale
+            this.globalCounterDetailWindow.fontScale = this.fontScale
+
+            imgui.TreePop()
+        end
+    end
+
+    this.update = function()
+        if not this.open then
+            return
+        end
+
+        local success
+
+        this.modified = false
+
+        imgui.SetNextWindowSize(500, 400, 'FirstUseEver')
+        success,this.open = imgui.Begin(this.title, this.open)
+        imgui.SetWindowFontScale(this.fontScale)
+
+        _showWindowSettings()
+
+        imgui.End()
+    end
+
+    return this
+end
+
+local function KillCounterWindow(killCounter)
+    local this = {
+        title = "Kill Counter - Main",
+        fontScale = 1.0,
+        open = false
+    }
+
+    local _killCounter = killCounter
+
+    local _showCounters = function()
         local i
         local counter
 
@@ -780,11 +884,11 @@ local function MainWindow(fontScale)
         imgui.Text("Kills")
         imgui.NextColumn()
 
-        for i,counter in ipairs(killCounter.visible) do
-            local display = monsters.m[counter.monsterID] == nil or monsters.m[counter.monsterID][2]
+        for i,counter in ipairs(_killCounter.visible) do
+            local display = _Monsters.m[counter.monsterID] == nil or _Monsters.m[counter.monsterID][2]
 
             if display then
-                helpers.imguiText(counter.getMonsterName(), counter.monsterColor, true)
+                _Helpers.imguiText(counter.getMonsterName(), counter.monsterColor, true)
                 imgui.NextColumn()
                 imgui.Text(string.format("%d", counter.kills()))
                 imgui.NextColumn()
@@ -792,21 +896,18 @@ local function MainWindow(fontScale)
         end
     end
 
-    this.update = function(killCounter)
+    this.update = function()
         if not this.open then
             return
         end
 
+        local success
+
         imgui.SetNextWindowSize(270, 380, 'FirstUseEver')
-        imgui.Begin("Kill Counter")
+        success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
 
-        this.reset = imgui.Button("Reset")
-
-        imgui.SameLine(0, 5)
-        this.details = imgui.Button("Details...")
-
-        _printCounters(killCounter)
+        _showCounters()
 
         imgui.End()
     end
@@ -814,24 +915,29 @@ local function MainWindow(fontScale)
     return this
 end
 
-local function DetailsWindow(fontScale)
+local function KillCounterDetailWindow(killCounter)
     local this = {
-        fontScale = fontScale,
+        title = "Kill Counter - Detail",
+        fontScale = 1.0,
         open = false,
         exportFilePath = "kill-counters-export.txt"
     }
 
-    local _printExport = function(killCounter)
+    local _killCounter = killCounter
+
+    local _showExport = function()
         local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n";
+
+        _killCounter.sort()
 
         imgui.Text(string.format(lineFormat, "Difficulty", "Episode", "Section ID", "Area", "Monster", "Kill Count"))
         imgui.Text(string.format(lineFormat, "----------", "-------", "----------", "----", "-------", "----------"))
 
-        for i,counter in ipairs(killCounter.all) do
-            difficulty = difficulties.d[counter.difficulty] or string.format("Unknown (%d)", counter.difficulty)
-            episode = episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
-            sectionID = sectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
-            area = areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
+        for i,counter in ipairs(_killCounter.all) do
+            difficulty = _Difficulties.d[counter.difficulty] or string.format("Unknown (%d)", counter.difficulty)
+            episode = _Episodes.e[counter.episode] or string.format("Unknown (%d)", counter.episode)
+            sectionID = _SectionIDs.ids[counter.sectionID] or string.format("Unknown (%d)", counter.sectionID)
+            area = _Areas.a[counter.area] or string.format("Unknown (%d)", counter.area)
             monster = counter.getMonsterName()
 
             imgui.Text(string.format(lineFormat,
@@ -844,7 +950,7 @@ local function DetailsWindow(fontScale)
         end
     end
 
-    this.update = function(killCounter)
+    this.update = function()
         if not this.open then
             return
         end
@@ -852,17 +958,82 @@ local function DetailsWindow(fontScale)
         local success
 
         imgui.SetNextWindowSize(800, 400, 'FirstUseEver')
-        success,this.open = imgui.Begin("Kill Counter Detail", this.open)
+        success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
 
         success,this.exportFilePath = imgui.InputText("", this.exportFilePath, 260)
-        imgui.SameLine(0, 5)
 
+        imgui.SameLine(0, 5)
         if imgui.Button("Save to file") then
-            killCounter.export(this.exportFilePath)
+            _killCounter.export(this.exportFilePath)
         end
 
-        _printExport(killCounter)
+        _showExport()
+
+        imgui.End()
+    end
+
+    return this
+end
+
+local function SessionInfoWindow(session)
+    local this = {
+        title = "Kill Counter - Session Info",
+        open = false
+    }
+
+    local _session = session
+
+    local _getValueOverTimeSpent = function(value, timeSpent)
+        local valueOverTime = value / timeSpent
+        local timePeriod = "per second"
+
+        if valueOverTime < 1.0 then
+            valueOverTime = valueOverTime * 60.0
+            timePeriod = "per minute"
+        end
+
+        if valueOverTime < 1.0 then
+            valueOverTime = valueOverTime * 60.0
+            timePeriod = "per hour"
+        end
+
+        return string.format("%f %s", valueOverTime, timePeriod)
+    end
+
+    local _getFormattedTimeSpent = function(timeSpent)
+        local epoch = 5 * 60 * 60
+        return os.date("%H:%M:%S", timeSpent + epoch)
+    end
+
+    local _showSessionInfo = function()
+        local timeSpent = _session.getTimeSpent()
+        local timeSpentInDungeon = _session.getTimeSpentInDungeon()
+
+        imgui.Text(string.format("Meseta: %d", _session.mesetaEarned))
+        imgui.Text(string.format("Meseta: %s", _getValueOverTimeSpent(_session.mesetaEarned, timeSpent)))
+        imgui.Text(string.format("Meseta: %s in dungeon", _getValueOverTimeSpent(_session.mesetaEarned, timeSpentInDungeon)))
+        imgui.Separator()
+        imgui.Text(string.format("Experience: %d", _session.experienceEarned))
+        imgui.Text(string.format("Experience: %s", _getValueOverTimeSpent(_session.experienceEarned, timeSpent)))
+        imgui.Text(string.format("Experience: %s in dungeon", _getValueOverTimeSpent(_session.experienceEarned, timeSpentInDungeon)))
+        imgui.Separator()
+        imgui.Text(string.format("Time: %s", _getFormattedTimeSpent(timeSpent)))
+        imgui.Text(string.format("Dungeon Time: %s", _getFormattedTimeSpent(timeSpentInDungeon)))
+    end
+
+    this.update = function()
+        if not this.open then
+            return
+        end
+
+        local success
+
+        imgui.SetNextWindowSize(310, 200)--, 'FirstUseEver')
+        success,this.open = imgui.Begin(this.title, this.open)
+        imgui.SetWindowFontScale(this.fontScale)
+
+        _showSessionInfo()
 
         imgui.End()
     end
@@ -877,26 +1048,28 @@ local function present()
     _SessionCounter.update()
     _Session.update()
 
-    _MainWindow.update(_GlobalCounter)
-    _DetailsWindow.update(_GlobalCounter)
+    _ConfigurationWindow.update()
+    _GlobalCounterWindow.update()
+    _GlobalCounterDetailWindow.update()
+    _SessionCounterWindow.update()
+    _SessionInfoWindow.update()
+
+    if _ConfigurationWindow.modified then
+        _Configuration.globalCounterWindow = _GlobalCounterWindow.open
+        _Configuration.globalCounterDetailWindow = _GlobalCounterDetailWindow.open
+        _Configuration.sessionCounterWindow = _SessionCounterWindow.open
+        _Configuration.sessionInfoWindow = _SessionInfoWindow.open
+        _Configuration.serialize(_ConfigurationPath)
+    end
 
     if _GlobalCounter.modified then
         _GlobalCounter.serialize(_DataPath)
     end
 
     if _Session.modified then
-        local pathPrefix = _SessionsPath .. "\\" .. os.date("%Y%m%d%H%m%S", _Session.startTime)
+        local pathPrefix = _SessionsPath .. "\\" .. os.date("%Y%m%d%H%M%S", _Session.startTime)
         _Session.serialize(pathPrefix .. "-session-counters.txt")
         _SessionCounter.serialize(pathPrefix .. "-kill-counters.txt")
-    end
-
-    if _MainWindow.details then
-        _DetailsWindow.open = not _DetailsWindow.open
-    end
-
-    if _MainWindow.reset then
-        _GlobalCounter.reset()
-        _GlobalCounter.serialize(_DataPath)
     end
 end
 
@@ -907,10 +1080,40 @@ local function init()
     _SessionCounter = KillCounter(_Dimensions, _MonsterTable)
     _Session = Session(_Dimensions, _SessionCounter)
 
-    _MainWindow = MainWindow(_FontScale)
-    _DetailsWindow = DetailsWindow(_FontScale)
-
     _GlobalCounter.deserialize(_DataPath)
+
+    _GlobalCounterWindow = KillCounterWindow(_GlobalCounter)
+    _GlobalCounterWindow.title = "Kill Counter - Global"
+    _GlobalCounterWindow.fontScale = _Configuration.fontScale
+    _GlobalCounterWindow.open = _Configuration.globalCounterWindow
+
+    _GlobalCounterDetailWindow = KillCounterDetailWindow(_GlobalCounter)
+    _GlobalCounterDetailWindow.title = "Kill Counter - Global Detail"
+    _GlobalCounterDetailWindow.fontScale = _Configuration.fontScale
+    _GlobalCounterDetailWindow.open = _Configuration.globalCounterDetailWindow
+
+    _SessionCounterWindow = KillCounterWindow(_SessionCounter)
+    _SessionCounterWindow.title = "Kill Counter - Session"
+    _SessionCounterWindow.fontScale = _Configuration.fontScale
+    _SessionCounterWindow.open = _Configuration.sessionCounterWindow
+
+    _SessionInfoWindow = SessionInfoWindow(_Session)
+    _SessionInfoWindow.title = "Kill Counter - Session Info"
+    _SessionInfoWindow.fontScale = _Configuration.fontScale
+    _SessionInfoWindow.open = _Configuration.sessionInfoWindow
+
+    _ConfigurationWindow = ConfigurationWindow(_Configuration)
+    _ConfigurationWindow.fontScale = _Configuration.fontScale
+    _ConfigurationWindow.globalCounterWindow = _GlobalCounterWindow
+    _ConfigurationWindow.globalCounterDetailWindow = _GlobalCounterDetailWindow
+    _ConfigurationWindow.sessionCounterWindow = _SessionCounterWindow
+    _ConfigurationWindow.sessionInfoWindow = _SessionInfoWindow
+
+    local configurationButtonHandler = function()
+        _ConfigurationWindow.open = not _ConfigurationWindow.open
+    end
+
+    _MainMenu.add_button('Kill Counter', configurationButtonHandler)
 
     return {
         name = "Kill Counter",
