@@ -66,6 +66,7 @@ local _SessionCounterWindow
 
 if not _Success then
     _Configuration = {
+        configurationWindow = true,
         globalCounterWindow = false,
         globalCounterDetailWindow = false,
         sessionCounterWindow = false,
@@ -81,6 +82,7 @@ _Configuration.serialize = function(configurationPath)
         io.output(file)
 
         io.write("return {\n")
+        io.write(string.format("    configurationWindow = %s,\n", tostring(_Configuration.configurationWindow)))
         io.write(string.format("    globalCounterWindow = %s,\n", tostring(_Configuration.globalCounterWindow)))
         io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
         io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
@@ -859,6 +861,7 @@ local function ConfigurationWindow(configuration)
 
     this.hasChanged = function()
         return
+            this.open ~= _configuration.configurationWindow or
             this.globalCounterWindow.open ~= _configuration.globalCounterWindow or
             this.globalCounterDetailWindow.open ~= _configuration.globalCounterDetailWindow or
             this.sessionCounterWindow.open ~= _configuration.sessionCounterWindow or
@@ -1059,6 +1062,7 @@ local function present()
     _SessionInfoWindow.update()
 
     if _ConfigurationWindow.hasChanged() then
+        _Configuration.configurationWindow = _ConfigurationWindow.open
         _Configuration.globalCounterWindow = _GlobalCounterWindow.open
         _Configuration.globalCounterDetailWindow = _GlobalCounterDetailWindow.open
         _Configuration.sessionCounterWindow = _SessionCounterWindow.open
@@ -1112,6 +1116,7 @@ local function init()
     _ConfigurationWindow.globalCounterDetailWindow = _GlobalCounterDetailWindow
     _ConfigurationWindow.sessionCounterWindow = _SessionCounterWindow
     _ConfigurationWindow.sessionInfoWindow = _SessionInfoWindow
+    _ConfigurationWindow.open = _Configuration.configurationWindow
 
     local configurationButtonHandler = function()
         _ConfigurationWindow.open = not _ConfigurationWindow.open
