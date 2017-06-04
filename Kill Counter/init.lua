@@ -693,7 +693,7 @@ local function Session(dimensions, killCounter)
         this.startTime = _now
         this.questNumber = 0
         this.mesetaEarned = 0
-        this.expEarned = 0
+        this.experienceEarned = 0
 
         _meseta = nil
         _bankMeseta = nil
@@ -1036,7 +1036,7 @@ local function SessionInfoWindow(session)
 
         local success
 
-        imgui.SetNextWindowSize(310, 200)--, 'FirstUseEver')
+        imgui.SetNextWindowSize(310, 200, 'FirstUseEver')
         success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
 
