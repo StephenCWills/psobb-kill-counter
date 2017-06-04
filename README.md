@@ -24,5 +24,5 @@ For more in-depth information on how the Kill Counter works, please visit the
 
 ## Screenshots
 ![forest.jpg](screenshots/forest.jpg)
-![caves.jpg](screenshots/caves.jpg)
+![mines.jpg](screenshots/mines.jpg)
 ![detail.jpg](screenshots/detail.jpg)
