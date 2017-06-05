@@ -838,6 +838,8 @@ local function ConfigurationWindow(configuration)
             success,this.fontScale = imgui.InputFloat("Font Scale", this.fontScale)
             this.globalCounterWindow.fontScale = this.fontScale
             this.globalCounterDetailWindow.fontScale = this.fontScale
+            this.sessionCounterWindow.fontScale = this.fontScale
+            this.sessionInfoWindow.fontScale = this.fontScale
 
             imgui.TreePop()
         end
@@ -1126,7 +1128,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.1",
+        version = "2.0.2",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
