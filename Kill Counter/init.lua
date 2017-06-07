@@ -400,9 +400,9 @@ local function KillCounter(dimensions, monsterTable)
 
         counter.getMonsterName = function()
             if _monsterName == nil then
-                _monsterName = _Unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
-
-                if _monsterName == 999 then
+                if counter.monsterID ~= 999 then
+                    _monsterName = _Unitxt.GetMonsterName(counter.monsterID, counter.difficulty == 3)
+                else
                     _monsterName = "Darvant"
                 end
 
