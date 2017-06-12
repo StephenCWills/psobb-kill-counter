@@ -716,10 +716,6 @@ local function Session(dimensions, killCounter)
         return _timeSpentInDungeon + (_now - _startTimeInDungeon)
     end
 
-    this.getSessionPath = function(sessionsPath)
-        return sessionsPath .. os.date("%Y-%m-%d\\%H.%m.%S", this.startTime)
-    end
-
     this.update = function()
         local now = os.time()
         local playerCount = pso.read_u32(_PlayerCount)
@@ -1011,8 +1007,7 @@ local function SessionInfoWindow(session)
     end
 
     local _getFormattedTimeSpent = function(timeSpent)
-        local epoch = 5 * 60 * 60
-        return os.date("%H:%M:%S", timeSpent + epoch)
+        return os.date("!%H:%M:%S", timeSpent)
     end
 
     local _showSessionInfo = function()
@@ -1128,7 +1123,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.2",
+        version = "2.0.3",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
