@@ -29,9 +29,8 @@ local _BankPointer = 0x00A95EE0
 
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
-local _Area = 0x00AC9CF8
 local _SectionID = 0x00A9C4D8
-local _Location = 0x00AAFCA0
+local _Location = 0x00AAFC9C
 
 local _EntityCount = 0x00AAE164
 local _EntityArray = 0x00AAD720
@@ -95,22 +94,34 @@ _Configuration.serialize = function(configurationPath)
 end
 
 local function Dimensions()
+    local _locationMap = {
+        [0x01] = 0, [0x02] = 0,                         -- Forest
+        [0x03] = 1, [0x04] = 1, [0x05] = 1,             -- Caves
+        [0x06] = 2, [0x07] = 2,                         -- Mines
+        [0x08] = 3, [0x09] = 3, [0x0A] = 3,             -- Ruins
+        [0x0B] = 0, [0x0C] = 1, [0x0D] = 2, [0x0E] = 3, -- Bosses
+        [0x13] = 7, [0x14] = 7,                         -- VR Temple
+        [0x15] = 8, [0x16] = 8,                         -- VR Spaceship
+        [0x17] = 5, [0x18] = 5, [0x19] = 5, [0x1A] = 5, -- Central Control Area
+        [0x1C] = 6, [0x1D] = 6,                         -- Seabed
+        [0x1E] = 5, [0x1F] = 6, [0x20] = 7, [0x21] = 8, -- Bosses
+        [0x23] = 5,                                     -- Tower
+        [0x24] = 9, [0x25] = 9, [0x26] = 9, [0x27] = 9, -- Crater (Exterior)
+        [0x28] = 10,                                    -- Crater (Interior)
+        [0x29] = 11, [0x2A] = 11, [0x2B] = 11,          -- Subterranean Desert
+        [0x2C] = 11                                     -- Saint Milion
+    }
+
     local _getArea = function()
-        local area = pso.read_u32(_Area)
-
-        -- Convert Dark Falz' area to Ruins
-        if area == 4 then
-            area = 3
-        end
-
-        return area
+        local location = pso.read_u32(_Location)
+        return _locationMap[location]
     end
 
     local this = {
         difficulty = pso.read_u32(_Difficulty),
         episode = pso.read_u32(_Episode),
         sectionID = pso.read_u32(_SectionID),
-        area = _getArea(),
+        area = _getArea() or 0,
         hasChanged = true
     }
 
@@ -118,7 +129,7 @@ local function Dimensions()
         local difficulty = pso.read_u32(_Difficulty)
         local episode = pso.read_u32(_Episode)
         local sectionID = pso.read_u32(_SectionID)
-        local area = _getArea()
+        local area = _getArea() or this.area
 
         this.hasChanged =
             this.difficulty ~= difficulty or
@@ -721,7 +732,7 @@ local function Session(dimensions, killCounter)
         local playerCount = pso.read_u32(_PlayerCount)
         local playerAddress = _getPlayerAddress()
         local questNumber = _getQuestNumber()
-        local location = pso.read_u32(_Location)
+        local location = pso.read_u32(_Location + 0x04)
         local remainder = now - math.floor(now / 5) * 5
 
         this.modified = false
