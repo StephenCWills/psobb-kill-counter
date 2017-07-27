@@ -64,15 +64,27 @@ local _GlobalCounterDetailWindow
 local _SessionCounterWindow
 
 if not _Success then
-    _Configuration = {
-        configurationWindow = true,
-        globalCounterWindow = false,
-        globalCounterDetailWindow = false,
-        sessionCounterWindow = false,
-        sessionInfoWindow = false,
-        fontScale = 1.0
-    }
+    _Configuration = { }
 end
+
+_Configuration.configurationWindow = (_Configuration.configurationWindow == nil) or _Configuration.configurationWindow
+_Configuration.globalCounterWindow = (_Configuration.globalCounterWindow ~= nil) and _Configuration.globalCounterWindow
+_Configuration.globalCounterDetailWindow = (_Configuration.globalCounterDetailWindow ~= nil) and _Configuration.globalCounterDetailWindow
+_Configuration.sessionCounterWindow = (_Configuration.sessionCounterWindow ~= nil) and _Configuration.sessionCounterWindow
+_Configuration.sessionInfoWindow = (_Configuration.sessionInfoWindow ~= nil) and _Configuration.sessionInfoWindow
+_Configuration.fontScale = _Configuration.fontScale or 1.0
+
+_Configuration.globalCounterDimensionsLocked = (_Configuration.globalCounterDimensionsLocked ~= nil) and _Configuration.globalCounterDimensionsLocked
+_Configuration.globalCounterDifficulty = _Configuration.globalCounterDifficulty or 0
+_Configuration.globalCounterEpisode = _Configuration.globalCounterEpisode or 0
+_Configuration.globalCounterSectionID = _Configuration.globalCounterSectionID or 0
+_Configuration.globalCounterArea = _Configuration.globalCounterArea or 0
+
+_Configuration.sessionCounterDimensionsLocked = (_Configuration.sessionCounterDimensionsLocked ~= nil) and _Configuration.sessionCounterDimensionsLocked
+_Configuration.sessionCounterDifficulty = _Configuration.sessionCounterDifficulty or 0
+_Configuration.sessionCounterEpisode = _Configuration.sessionCounterEpisode or 0
+_Configuration.sessionCounterSectionID = _Configuration.sessionCounterSectionID or 0
+_Configuration.sessionCounterArea = _Configuration.sessionCounterArea or 0
 
 _Configuration.serialize = function(configurationPath)
     local file = io.open(configurationPath, "w+")
@@ -86,7 +98,19 @@ _Configuration.serialize = function(configurationPath)
         io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
         io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
         io.write(string.format("    sessionInfoWindow = %s,\n", tostring(_Configuration.sessionInfoWindow)))
-        io.write(string.format("    fontScale = %f\n", _Configuration.fontScale))
+        io.write(string.format("    fontScale = %f,\n", _Configuration.fontScale))
+        io.write("\n")
+        io.write(string.format("    globalCounterDimensionsLocked = %s,\n", tostring(_Configuration.globalCounterDimensionsLocked)))
+        io.write(string.format("    globalCounterDifficulty = %f,\n", _Configuration.globalCounterDifficulty))
+        io.write(string.format("    globalCounterEpisode = %f,\n", _Configuration.globalCounterEpisode))
+        io.write(string.format("    globalCounterSectionID = %f,\n", _Configuration.globalCounterSectionID))
+        io.write(string.format("    globalCounterArea = %f,\n", _Configuration.globalCounterArea))
+        io.write("\n")
+        io.write(string.format("    sessionCounterDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDimensionsLocked)))
+        io.write(string.format("    sessionCounterDifficulty = %f,\n", _Configuration.sessionCounterDifficulty))
+        io.write(string.format("    sessionCounterEpisode = %f,\n", _Configuration.sessionCounterEpisode))
+        io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
+        io.write(string.format("    sessionCounterArea = %f\n", _Configuration.sessionCounterArea))
         io.write("}\n")
 
         io.close(file)
@@ -124,6 +148,14 @@ local function Dimensions()
         area = _getArea() or 0,
         hasChanged = true
     }
+
+    this.equals = function(dimensions)
+        return
+            this.difficulty == dimensions.difficulty and
+            this.episode == dimensions.episode and
+            this.sectionID == dimensions.sectionID and
+            this.area == dimensions.area
+    end
 
     this.update = function()
         local difficulty = pso.read_u32(_Difficulty)
@@ -369,7 +401,8 @@ local function KillCounter(dimensions, monsterTable)
         all = {},
         visible = {},
         byID = {},
-        modified = false
+        modified = false,
+        visibleDimensions = Dimensions()
     }
 
     local _dimensions = dimensions
@@ -471,15 +504,16 @@ local function KillCounter(dimensions, monsterTable)
     local _buildVisibleCounters = function()
         local i
         local counter
+        local visibleDimensions = this.visibleDimensions
 
         this.visible = {}
 
         for i,counter in ipairs(this.all) do
             local isMatch =
-                counter.difficulty == _dimensions.difficulty and
-                counter.episode == _dimensions.episode and
-                counter.sectionID == _dimensions.sectionID and
-                counter.area == _dimensions.area
+                counter.difficulty == visibleDimensions.difficulty and
+                counter.episode == visibleDimensions.episode and
+                counter.sectionID == visibleDimensions.sectionID and
+                counter.area == visibleDimensions.area
 
             if isMatch then
                 table.insert(this.visible, _makeVisibleCounter(counter))
@@ -511,11 +545,15 @@ local function KillCounter(dimensions, monsterTable)
     this.update = function()
         local mAddr
         local monster
+        local visibleDimensions = this.visibleDimensions
 
         this.modified = false
 
-        if _dimensions.hasChanged then
+        if visibleDimensions.hasChanged then
             _buildVisibleCounters()
+        end
+
+        if _dimensions.hasChanged then
             _buildCountersByID()
         end
 
@@ -528,9 +566,12 @@ local function KillCounter(dimensions, monsterTable)
                 else
                     counter = _makeCounter(_dimensions, monster)
                     table.insert(this.all, counter)
-                    table.insert(this.visible, _makeVisibleCounter(counter))
-                    table.sort(this.visible, _getCounterOrder)
                     this.byID[monster.id] = counter
+
+                    if _dimensions.equals(visibleDimensions) then
+                        table.insert(this.visible, _makeVisibleCounter(counter))
+                        _sortVisibleCounters = true
+                    end
                 end
 
                 this.modified = true
@@ -819,6 +860,28 @@ local function ConfigurationWindow(configuration)
     }
 
     local _configuration = configuration
+    local _hasChanged = false
+
+    local _sortByKey = function(tab)
+        local keys = { }
+
+        for k in pairs(tab) do
+            table.insert(keys, k)
+        end
+
+        table.sort(keys)
+
+        for i in ipairs(keys) do
+            keys[i] = tab[keys[i]]
+        end
+
+        return keys
+    end
+
+    local _difficulties = _sortByKey(_Difficulties.d)
+    local _episodes = _sortByKey(_Episodes.e)
+    local _sectionIDs = _sortByKey(_SectionIDs.ids)
+    local _areas = _sortByKey(_Areas.a)
 
     local _showWindowSettings = function()
         local success
@@ -852,6 +915,126 @@ local function ConfigurationWindow(configuration)
         end
     end
 
+    local _showGlobalCounterSettings = function()
+        local success
+
+        if imgui.TreeNodeEx("Global Kill Counters") then
+            if imgui.Checkbox("Enabled", this.globalCounterWindow.open) then
+                this.globalCounterWindow.open = not this.globalCounterWindow.open
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("Dimensions Locked", _configuration.globalCounterDimensionsLocked) then
+                _configuration.globalCounterDimensionsLocked = not _configuration.globalCounterDimensionsLocked
+                _hasChanged = true
+            end
+
+            imgui.PushItemWidth(100)
+            local difficulty = _configuration.globalCounterDifficulty + 1
+            success,difficulty = imgui.Combo("Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+
+            if (_configuration.globalCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.globalCounterDifficulty = difficulty - 1
+                _configuration.globalCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            local episode = _configuration.globalCounterEpisode + 1
+            success,episode = imgui.Combo("Episode", episode, _episodes, table.getn(_episodes))
+
+            if (_configuration.globalCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.globalCounterEpisode = episode - 1
+                _configuration.globalCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            local sectionID = _configuration.globalCounterSectionID + 1
+            success,sectionID = imgui.Combo("Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+
+            if (_configuration.globalCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.globalCounterSectionID = sectionID - 1
+                _configuration.globalCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.PopItemWidth()
+            imgui.PushItemWidth(200)
+            imgui.SameLine(0, 50)
+            local area = _configuration.globalCounterArea + 1
+            success,area = imgui.Combo("Area", area, _areas, table.getn(_areas))
+
+            if (_configuration.globalCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.globalCounterArea = area - 1
+                _configuration.globalCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.PopItemWidth()
+            imgui.TreePop()
+        end
+    end
+
+    local _showSessionCounterSettings = function()
+        local success
+
+        if imgui.TreeNodeEx("Session Kill Counters") then
+            if imgui.Checkbox("Enabled", this.sessionCounterWindow.open) then
+                this.sessionCounterWindow.open = not this.sessionCounterWindow.open
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("Dimensions Locked", _configuration.sessionCounterDimensionsLocked) then
+                _configuration.sessionCounterDimensionsLocked = not _configuration.sessionCounterDimensionsLocked
+                _hasChanged = true
+            end
+
+            imgui.PushItemWidth(100)
+            local difficulty = _configuration.sessionCounterDifficulty + 1
+            success,difficulty = imgui.Combo("Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+
+            if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.sessionCounterDifficulty = difficulty - 1
+                _configuration.sessionCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            local episode = _configuration.sessionCounterEpisode + 1
+            success,episode = imgui.Combo("Episode", episode, _episodes, table.getn(_episodes))
+
+            if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.sessionCounterEpisode = episode - 1
+                _configuration.sessionCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            local sectionID = _configuration.sessionCounterSectionID + 1
+            success,sectionID = imgui.Combo("Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+
+            if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.sessionCounterSectionID = sectionID - 1
+                _configuration.sessionCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.PopItemWidth()
+            imgui.PushItemWidth(200)
+            imgui.SameLine(0, 50)
+            local area = _configuration.sessionCounterArea + 1
+            success,area = imgui.Combo("Area", area, _areas, table.getn(_areas))
+
+            if (_configuration.sessionCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
+                _configuration.sessionCounterArea = area - 1
+                _configuration.sessionCounterDimensionsLocked = true
+                _hasChanged = true
+            end
+
+            imgui.PopItemWidth()
+            imgui.TreePop()
+        end
+    end
+
     this.update = function()
         if not this.open then
             return
@@ -863,7 +1046,10 @@ local function ConfigurationWindow(configuration)
         success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
 
+        _hasChanged = false
         _showWindowSettings()
+        _showGlobalCounterSettings()
+        _showSessionCounterSettings()
 
         imgui.End()
     end
@@ -875,7 +1061,8 @@ local function ConfigurationWindow(configuration)
             this.globalCounterDetailWindow.open ~= _configuration.globalCounterDetailWindow or
             this.sessionCounterWindow.open ~= _configuration.sessionCounterWindow or
             this.sessionInfoWindow.open ~= _configuration.sessionInfoWindow or
-            this.fontScale ~= _configuration.fontScale
+            this.fontScale ~= _configuration.fontScale or
+            _hasChanged
     end
 
     return this
@@ -1068,6 +1255,42 @@ local function present()
     _GlobalCounterDetailWindow.update()
     _SessionCounterWindow.update()
     _SessionInfoWindow.update()
+
+    if not _Configuration.globalCounterDimensionsLocked then
+        _Configuration.globalCounterDifficulty = _Dimensions.difficulty
+        _Configuration.globalCounterEpisode = _Dimensions.episode
+        _Configuration.globalCounterSectionID = _Dimensions.sectionID
+        _Configuration.globalCounterArea = _Dimensions.area
+    end
+
+    _GlobalCounter.visibleDimensions.hasChanged =
+        _GlobalCounter.visibleDimensions.difficulty ~= _Configuration.globalCounterDifficulty or
+        _GlobalCounter.visibleDimensions.episode ~= _Configuration.globalCounterEpisode or
+        _GlobalCounter.visibleDimensions.sectionID ~= _Configuration.globalCounterSectionID or
+        _GlobalCounter.visibleDimensions.area ~= _Configuration.globalCounterArea
+
+    _GlobalCounter.visibleDimensions.difficulty = _Configuration.globalCounterDifficulty
+    _GlobalCounter.visibleDimensions.episode = _Configuration.globalCounterEpisode
+    _GlobalCounter.visibleDimensions.sectionID = _Configuration.globalCounterSectionID
+    _GlobalCounter.visibleDimensions.area = _Configuration.globalCounterArea
+
+    if not _Configuration.sessionCounterDimensionsLocked then
+        _Configuration.sessionCounterDifficulty = _Dimensions.difficulty
+        _Configuration.sessionCounterEpisode = _Dimensions.episode
+        _Configuration.sessionCounterSectionID = _Dimensions.sectionID
+        _Configuration.sessionCounterArea = _Dimensions.area
+    end
+
+    _SessionCounter.visibleDimensions.hasChanged =
+        _SessionCounter.visibleDimensions.difficulty ~= _Configuration.sessionCounterDifficulty or
+        _SessionCounter.visibleDimensions.episode ~= _Configuration.sessionCounterEpisode or
+        _SessionCounter.visibleDimensions.sectionID ~= _Configuration.sessionCounterSectionID or
+        _SessionCounter.visibleDimensions.area ~= _Configuration.sessionCounterArea
+
+    _SessionCounter.visibleDimensions.difficulty = _Configuration.sessionCounterDifficulty
+    _SessionCounter.visibleDimensions.episode = _Configuration.sessionCounterEpisode
+    _SessionCounter.visibleDimensions.sectionID = _Configuration.sessionCounterSectionID
+    _SessionCounter.visibleDimensions.area = _Configuration.sessionCounterArea
 
     if _ConfigurationWindow.hasChanged() then
         _Configuration.configurationWindow = _ConfigurationWindow.open

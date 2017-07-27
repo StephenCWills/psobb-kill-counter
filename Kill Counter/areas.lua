@@ -7,6 +7,7 @@ local a = {
     [1] = "Caves",
     [2] = "Mines",
     [3] = "Ruins",
+    [4] = "Dark Falz",
     [5] = "Central Control Area",
     [6] = "Seabed",
     [7] = "VR Temple",
