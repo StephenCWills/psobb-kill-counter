@@ -29,7 +29,7 @@ local _BankPointer = 0x00A95EE0
 
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
-local _SectionID = 0x00A9C4D8
+local _SectionID = 0x00A962BC
 local _Location = 0x00AAFC9C
 
 local _EntityCount = 0x00AAE164
