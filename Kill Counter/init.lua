@@ -29,7 +29,7 @@ local _BankPointer = 0x00A95EE0
 
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
-local _SectionID = 0x00A962BC
+local _SectionID = 0x00A9C4D8
 local _Location = 0x00AAFC9C
 
 local _EntityCount = 0x00AAE164
@@ -86,6 +86,17 @@ _Configuration.sessionCounterEpisode = _Configuration.sessionCounterEpisode or 0
 _Configuration.sessionCounterSectionID = _Configuration.sessionCounterSectionID or 0
 _Configuration.sessionCounterArea = _Configuration.sessionCounterArea or 0
 
+if _Configuration.lockRoomID == nil then
+    local ephinea = io.open("ephinea.dll", "r")
+
+    _Configuration.lockRoomID = false
+
+    if ephinea ~= nil then
+        io.close(ephinea)
+        _Configuration.lockRoomID = true
+    end
+end
+
 _Configuration.serialize = function(configurationPath)
     local file = io.open(configurationPath, "w+")
 
@@ -110,7 +121,9 @@ _Configuration.serialize = function(configurationPath)
         io.write(string.format("    sessionCounterDifficulty = %f,\n", _Configuration.sessionCounterDifficulty))
         io.write(string.format("    sessionCounterEpisode = %f,\n", _Configuration.sessionCounterEpisode))
         io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
-        io.write(string.format("    sessionCounterArea = %f\n", _Configuration.sessionCounterArea))
+        io.write(string.format("    sessionCounterArea = %f,\n", _Configuration.sessionCounterArea))
+        io.write("\n")
+        io.write(string.format("    lockRoomID = %s\n", tostring(_Configuration.lockRoomID)))
         io.write("}\n")
 
         io.close(file)
@@ -118,6 +131,15 @@ _Configuration.serialize = function(configurationPath)
 end
 
 local function Dimensions()
+    local this = {
+        difficulty = pso.read_u32(_Difficulty),
+        episode = pso.read_u32(_Episode),
+        sectionID = pso.read_u32(_SectionID),
+        area = 0,
+        hasChanged = true,
+        lockRoomID = false
+    }
+
     local _locationMap = {
         [0x01] = 0, [0x02] = 0,                         -- Forest
         [0x03] = 1, [0x04] = 1, [0x05] = 1,             -- Caves
@@ -136,18 +158,29 @@ local function Dimensions()
         [0x2C] = 11                                     -- Saint Milion
     }
 
+    local _lockedRoomID = 0
+
+    local _getPlayerAddress = function()
+        local playerIndex = pso.read_u32(_PlayerMyIndex)
+        return pso.read_u32(_PlayerArray + 4 * playerIndex)
+    end
+
+    local _getSectionID = function()
+        local playerCount = pso.read_u32(_PlayerCount)
+        local playerAddress = _getPlayerAddress()
+        local location = pso.read_u32(_Location + 0x04)
+
+        if location == 0xF or playerCount == 0 or playerAddress == 0 then
+            _lockedRoomID = pso.read_u32(_SectionID)
+        end
+
+        return this.lockRoomID and _lockedRoomID or pso.read_u32(_SectionID)
+    end
+
     local _getArea = function()
         local location = pso.read_u32(_Location)
         return _locationMap[location]
     end
-
-    local this = {
-        difficulty = pso.read_u32(_Difficulty),
-        episode = pso.read_u32(_Episode),
-        sectionID = pso.read_u32(_SectionID),
-        area = _getArea() or 0,
-        hasChanged = true
-    }
 
     this.equals = function(dimensions)
         return
@@ -160,7 +193,7 @@ local function Dimensions()
     this.update = function()
         local difficulty = pso.read_u32(_Difficulty)
         local episode = pso.read_u32(_Episode)
-        local sectionID = pso.read_u32(_SectionID)
+        local sectionID = _getSectionID()
         local area = _getArea() or this.area
 
         this.hasChanged =
@@ -644,7 +677,7 @@ local function KillCounter(dimensions, monsterTable)
     end
 
     this.export = function(filePath)
-        local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n";
+        local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n"
         local file = io.open(filePath, "w+")
         io.output(file)
 
@@ -1035,6 +1068,19 @@ local function ConfigurationWindow(configuration)
         end
     end
 
+    local _showAdvancedSettings = function()
+        local success
+
+        if imgui.TreeNodeEx("Advanced") then
+            if imgui.Checkbox("Lock Room ID", _configuration.lockRoomID) then
+                _configuration.lockRoomID = not _configuration.lockRoomID
+                _hasChanged = true
+            end
+
+            imgui.TreePop()
+        end
+    end
+
     this.update = function()
         if not this.open then
             return
@@ -1050,6 +1096,7 @@ local function ConfigurationWindow(configuration)
         _showWindowSettings()
         _showGlobalCounterSettings()
         _showSessionCounterSettings()
+        _showAdvancedSettings()
 
         imgui.End()
     end
@@ -1129,7 +1176,7 @@ local function KillCounterDetailWindow(killCounter)
     local _killCounter = killCounter
 
     local _showExport = function()
-        local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n";
+        local lineFormat = "%-10s  ||  %-7s  ||  %-10s  ||  %-22s  ||  %-16s  ||  %s\n"
 
         _killCounter.sort()
 
@@ -1256,6 +1303,8 @@ local function present()
     _SessionCounterWindow.update()
     _SessionInfoWindow.update()
 
+    _Dimensions.lockRoomID = _Configuration.lockRoomID
+
     if not _Configuration.globalCounterDimensionsLocked then
         _Configuration.globalCounterDifficulty = _Dimensions.difficulty
         _Configuration.globalCounterEpisode = _Dimensions.episode
@@ -1319,6 +1368,7 @@ local function init()
     _SessionCounter = KillCounter(_Dimensions, _MonsterTable)
     _Session = Session(_Dimensions, _SessionCounter)
 
+    _Dimensions.lockRoomID = _Configuration.lockRoomID
     _GlobalCounter.deserialize(_DataPath)
 
     _GlobalCounterWindow = KillCounterWindow(_GlobalCounter)
