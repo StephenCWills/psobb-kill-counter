@@ -62,6 +62,7 @@ local _ConfigurationWindow
 local _GlobalCounterWindow
 local _GlobalCounterDetailWindow
 local _SessionCounterWindow
+local _SessionCounterDetailWindow
 
 if not _Success then
     _Configuration = { }
@@ -71,6 +72,7 @@ _Configuration.configurationWindow = (_Configuration.configurationWindow == nil)
 _Configuration.globalCounterWindow = (_Configuration.globalCounterWindow ~= nil) and _Configuration.globalCounterWindow
 _Configuration.globalCounterDetailWindow = (_Configuration.globalCounterDetailWindow ~= nil) and _Configuration.globalCounterDetailWindow
 _Configuration.sessionCounterWindow = (_Configuration.sessionCounterWindow ~= nil) and _Configuration.sessionCounterWindow
+_Configuration.sessionCounterDetailWindow = (_Configuration.sessionCounterDetailWindow ~= nil) and _Configuration.sessionCounterDetailWindow
 _Configuration.sessionInfoWindow = (_Configuration.sessionInfoWindow ~= nil) and _Configuration.sessionInfoWindow
 _Configuration.fontScale = _Configuration.fontScale or 1.0
 
@@ -108,6 +110,7 @@ _Configuration.serialize = function(configurationPath)
         io.write(string.format("    globalCounterWindow = %s,\n", tostring(_Configuration.globalCounterWindow)))
         io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
         io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
+        io.write(string.format("    sessionCounterDetailWindow = %s,\n", tostring(_Configuration.sessionCounterDetailWindow)))
         io.write(string.format("    sessionInfoWindow = %s,\n", tostring(_Configuration.sessionInfoWindow)))
         io.write(string.format("    fontScale = %f,\n", _Configuration.fontScale))
         io.write("\n")
@@ -889,6 +892,7 @@ local function ConfigurationWindow(configuration)
         globalCounterWindow = nil,
         globalCounterDetailWindow = nil,
         sessionCounterWindow = nil,
+        sessionCounterDetailWindow = nil,
         sessionInfoWindow = nil
     }
 
@@ -934,15 +938,21 @@ local function ConfigurationWindow(configuration)
             end
 
             imgui.SameLine(0, 50)
+            if imgui.Checkbox("Session Kill Counter Detail", this.sessionCounterDetailWindow.open) then
+                this.sessionCounterDetailWindow.open = not this.sessionCounterDetailWindow.open
+            end
+
             if imgui.Checkbox("Session Info Counters", this.sessionInfoWindow.open) then
                 this.sessionInfoWindow.open = not this.sessionInfoWindow.open
             end
 
+            imgui.PushItemWidth(80)
             success,this.fontScale = imgui.InputFloat("Font Scale", this.fontScale)
             this.globalCounterWindow.fontScale = this.fontScale
             this.globalCounterDetailWindow.fontScale = this.fontScale
             this.sessionCounterWindow.fontScale = this.fontScale
             this.sessionInfoWindow.fontScale = this.fontScale
+            imgui.PopItemWidth()
 
             imgui.TreePop()
         end
@@ -1107,6 +1117,7 @@ local function ConfigurationWindow(configuration)
             this.globalCounterWindow.open ~= _configuration.globalCounterWindow or
             this.globalCounterDetailWindow.open ~= _configuration.globalCounterDetailWindow or
             this.sessionCounterWindow.open ~= _configuration.sessionCounterWindow or
+            this.sessionCounterDetailWindow.open ~= _configuration.sessionCounterDetailWindow or
             this.sessionInfoWindow.open ~= _configuration.sessionInfoWindow or
             this.fontScale ~= _configuration.fontScale or
             _hasChanged
@@ -1301,6 +1312,7 @@ local function present()
     _GlobalCounterWindow.update()
     _GlobalCounterDetailWindow.update()
     _SessionCounterWindow.update()
+    _SessionCounterDetailWindow.update()
     _SessionInfoWindow.update()
 
     _Dimensions.lockRoomID = _Configuration.lockRoomID
@@ -1346,6 +1358,7 @@ local function present()
         _Configuration.globalCounterWindow = _GlobalCounterWindow.open
         _Configuration.globalCounterDetailWindow = _GlobalCounterDetailWindow.open
         _Configuration.sessionCounterWindow = _SessionCounterWindow.open
+        _Configuration.sessionCounterDetailWindow = _SessionCounterDetailWindow.open
         _Configuration.sessionInfoWindow = _SessionInfoWindow.open
         _Configuration.serialize(_ConfigurationPath)
     end
@@ -1386,6 +1399,12 @@ local function init()
     _SessionCounterWindow.fontScale = _Configuration.fontScale
     _SessionCounterWindow.open = _Configuration.sessionCounterWindow
 
+    _SessionCounterDetailWindow = KillCounterDetailWindow(_SessionCounter)
+    _SessionCounterDetailWindow.title = "Kill Counter - Session Detail"
+    _SessionCounterDetailWindow.fontScale = _Configuration.fontScale
+    _SessionCounterDetailWindow.open = _Configuration.sessionCounterDetailWindow
+    _SessionCounterDetailWindow.exportFilePath = "session-counters-export.txt"
+
     _SessionInfoWindow = SessionInfoWindow(_Session)
     _SessionInfoWindow.title = "Kill Counter - Session Info"
     _SessionInfoWindow.fontScale = _Configuration.fontScale
@@ -1396,6 +1415,7 @@ local function init()
     _ConfigurationWindow.globalCounterWindow = _GlobalCounterWindow
     _ConfigurationWindow.globalCounterDetailWindow = _GlobalCounterDetailWindow
     _ConfigurationWindow.sessionCounterWindow = _SessionCounterWindow
+    _ConfigurationWindow.sessionCounterDetailWindow = _SessionCounterDetailWindow
     _ConfigurationWindow.sessionInfoWindow = _SessionInfoWindow
     _ConfigurationWindow.open = _Configuration.configurationWindow
 
@@ -1407,7 +1427,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.6",
+        version = "2.0.7",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
