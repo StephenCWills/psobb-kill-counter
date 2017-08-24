@@ -729,6 +729,7 @@ local function Session(dimensions, killCounter)
     local _meseta = nil
     local _bankMeseta = nil
     local _experience = nil
+    local _isInGameSession = false
     local _everBeenModified = false
 
     local _now = os.time()
@@ -812,29 +813,59 @@ local function Session(dimensions, killCounter)
         local location = pso.read_u32(_Location + 0x04)
         local remainder = now - math.floor(now / 5) * 5
 
+        -- Location of 0xF indicates
+        -- the player is in the lobby
+        local isSessionActive =
+            location ~= 0xF and
+            playerCount ~= 0 and
+            playerAddress ~= 0
+
+        -- If the quest number changes, force the current session to
+        -- end so a new session will be started for just the quest
+        if isSessionActive and this.questNumber ~= questNumber then
+            isSessionActive = false
+        end
+
+        if not isSessionActive then
+            -- If the session just ended, make sure the final
+            -- state of the session will be saved to the file
+            this.modified = _isSessionActive and _everBeenModified
+
+            -- Freeze all session data while
+            -- the session is inactive
+            _isSessionActive = false
+            return
+        end
+
+        -- This variable will be updated
+        -- later if the session is modified
         this.modified = false
 
+        -- Location of zero indicates the player is on Pioneer 2;
+        -- this logic stops the time counter from increasing
         if location == 0 then
             _timeSpentInDungeon = _timeSpentInDungeon + (_now - _startTimeInDungeon)
             _startTimeInDungeon = now
         end
 
+        -- After writing to the session file for the first time,
+        -- the session file is updated every five seconds to ensure
+        -- that the time spent values are kept fairly accurate
         if _everBeenModified and _now ~= now and remainder == 0 then
             this.modified = true
         end
 
         _now = now
 
-        if location == 0xF or playerCount == 0 or playerAddress == 0 then
+        -- If the session state was previously inactive,
+        -- a new session is started to replace the old session
+        if not _isSessionActive then
+            _isSessionActive = true
             _reset()
-            return
         end
 
-        if this.questNumber ~= questNumber then
-            _reset()
-            this.questNumber = questNumber
-        end
-
+        -- The rest of this method simply updates
+        -- the session data with the latest values
         local meseta = _getPlayerMeseta(playerAddress)
         local bankMeseta = _getBankMeseta()
         local experience = _getPlayerExperience(playerAddress)
@@ -1427,7 +1458,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.7",
+        version = "2.0.8",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
