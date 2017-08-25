@@ -888,6 +888,7 @@ local function Session(dimensions, killCounter)
             _everBeenModified = true
         end
 
+        this.questNumber = questNumber
         _meseta = meseta
         _bankMeseta = bankMeseta
         _experience = experience
@@ -1458,7 +1459,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.9",
+        version = "2.0.10",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
