@@ -729,7 +729,7 @@ local function Session(dimensions, killCounter)
     local _meseta = nil
     local _bankMeseta = nil
     local _experience = nil
-    local _isInGameSession = false
+    local _isSessionActive = false
     local _everBeenModified = false
 
     local _now = os.time()
@@ -822,7 +822,7 @@ local function Session(dimensions, killCounter)
 
         -- If the quest number changes, force the current session to
         -- end so a new session will be started for just the quest
-        if isSessionActive and this.questNumber ~= questNumber then
+        if _isSessionActive and this.questNumber ~= questNumber then
             isSessionActive = false
         end
 
@@ -1458,7 +1458,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.8",
+        version = "2.0.9",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
