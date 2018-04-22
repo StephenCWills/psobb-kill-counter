@@ -1281,12 +1281,12 @@ local function SessionInfoWindow(session)
         local valueOverTime = value / timeSpent
         local timePeriod = "per second"
 
-        if valueOverTime < 1.0 then
+        if math.abs(valueOverTime) < 1.0 then
             valueOverTime = valueOverTime * 60.0
             timePeriod = "per minute"
         end
 
-        if valueOverTime < 1.0 then
+        if math.abs(valueOverTime) < 1.0 then
             valueOverTime = valueOverTime * 60.0
             timePeriod = "per hour"
         end
