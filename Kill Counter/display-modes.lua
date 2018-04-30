@@ -3,7 +3,7 @@
 -- License: GPL-3.0 (https://github.com/StephenCWills/psobb-kill-counter/blob/master/LICENSE)
 
 return {
-    "Always",
+    "Show always",
     "Show with menu",
     "Hide with menu"
 }
