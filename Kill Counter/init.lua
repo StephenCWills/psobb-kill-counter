@@ -1,5 +1,5 @@
 -- Author: Stephen Wills (https://github.com/StephenCWills)
--- From: PSOBBMod-Addons (https://github.com/StephenCWills/psobb-kill-counter)
+-- From: psobb-kill-counter (https://github.com/StephenCWills/psobb-kill-counter)
 -- License: GPL-3.0 (https://github.com/StephenCWills/psobb-kill-counter/blob/master/LICENSE)
 
 -- This addon copies files from the lib folder of Soly's
@@ -9,14 +9,16 @@
 -- the comment block the at top of each file.
 local _MainMenu = require("core_mainmenu")
 local _Helpers = require("Kill Counter.helpers")
-local _Unitxt = require("Kill Counter.Unitxt")
+local _Unitxt = require("Kill Counter.unitxt")
 local _Success,_Configuration = pcall(require, "Kill Counter.configuration")
 
 local _Difficulties = require("Kill Counter.difficulties")
 local _Episodes = require("Kill Counter.episodes")
 local _SectionIDs = require("Kill Counter.section-ids")
 local _Areas = require("Kill Counter.areas")
-local _Monsters = require("Kill Counter.Monsters")
+local _Monsters = require("Kill Counter.monsters")
+
+local _DisplayModes = require("Kill Counter.display-modes")
 
 local _ConfigurationPath = "addons/Kill Counter/configuration.lua"
 local _DataPath = "kill-counters.txt"
@@ -26,6 +28,7 @@ local _PlayerMyIndex = 0x00A9C4F4
 local _PlayerArray = 0x00A94254
 local _PlayerCount = 0x00AAE168
 local _BankPointer = 0x00A95EE0
+local _MenuPointer = 0x00A97F44
 
 local _Difficulty = 0x00A9CD68
 local _Episode = 0x00A9B1C8
@@ -64,72 +67,80 @@ local _GlobalCounterDetailWindow
 local _SessionCounterWindow
 local _SessionCounterDetailWindow
 
-if not _Success then
-    _Configuration = { }
-end
-
-_Configuration.configurationWindow = (_Configuration.configurationWindow == nil) or _Configuration.configurationWindow
-_Configuration.globalCounterWindow = (_Configuration.globalCounterWindow ~= nil) and _Configuration.globalCounterWindow
-_Configuration.globalCounterDetailWindow = (_Configuration.globalCounterDetailWindow ~= nil) and _Configuration.globalCounterDetailWindow
-_Configuration.sessionCounterWindow = (_Configuration.sessionCounterWindow ~= nil) and _Configuration.sessionCounterWindow
-_Configuration.sessionCounterDetailWindow = (_Configuration.sessionCounterDetailWindow ~= nil) and _Configuration.sessionCounterDetailWindow
-_Configuration.sessionInfoWindow = (_Configuration.sessionInfoWindow ~= nil) and _Configuration.sessionInfoWindow
-_Configuration.fontScale = _Configuration.fontScale or 1.0
-
-_Configuration.globalCounterDimensionsLocked = (_Configuration.globalCounterDimensionsLocked ~= nil) and _Configuration.globalCounterDimensionsLocked
-_Configuration.globalCounterDifficulty = _Configuration.globalCounterDifficulty or 0
-_Configuration.globalCounterEpisode = _Configuration.globalCounterEpisode or 0
-_Configuration.globalCounterSectionID = _Configuration.globalCounterSectionID or 0
-_Configuration.globalCounterArea = _Configuration.globalCounterArea or 0
-
-_Configuration.sessionCounterDimensionsLocked = (_Configuration.sessionCounterDimensionsLocked ~= nil) and _Configuration.sessionCounterDimensionsLocked
-_Configuration.sessionCounterDifficulty = _Configuration.sessionCounterDifficulty or 0
-_Configuration.sessionCounterEpisode = _Configuration.sessionCounterEpisode or 0
-_Configuration.sessionCounterSectionID = _Configuration.sessionCounterSectionID or 0
-_Configuration.sessionCounterArea = _Configuration.sessionCounterArea or 0
-
-if _Configuration.lockRoomID == nil then
-    local ephinea = io.open("ephinea.dll", "r")
-
-    _Configuration.lockRoomID = false
-
-    if ephinea ~= nil then
-        io.close(ephinea)
-        _Configuration.lockRoomID = true
+local function LoadConfiguration()
+    if not _Success then
+        _Configuration = { }
     end
-end
 
-_Configuration.serialize = function(configurationPath)
-    local file = io.open(configurationPath, "w+")
+    _Configuration.configurationWindow = (_Configuration.configurationWindow == nil) or _Configuration.configurationWindow
+    _Configuration.globalCounterWindow = (_Configuration.globalCounterWindow ~= nil) and _Configuration.globalCounterWindow
+    _Configuration.globalCounterDetailWindow = (_Configuration.globalCounterDetailWindow ~= nil) and _Configuration.globalCounterDetailWindow
+    _Configuration.sessionCounterWindow = (_Configuration.sessionCounterWindow ~= nil) and _Configuration.sessionCounterWindow
+    _Configuration.sessionCounterDetailWindow = (_Configuration.sessionCounterDetailWindow ~= nil) and _Configuration.sessionCounterDetailWindow
+    _Configuration.sessionInfoWindow = (_Configuration.sessionInfoWindow ~= nil) and _Configuration.sessionInfoWindow
+    _Configuration.fontScale = _Configuration.fontScale or 1.0
 
-    if file ~= nil then
-        io.output(file)
+    _Configuration.globalCounterDimensionsLocked = (_Configuration.globalCounterDimensionsLocked ~= nil) and _Configuration.globalCounterDimensionsLocked
+    _Configuration.globalCounterDifficulty = _Configuration.globalCounterDifficulty or 0
+    _Configuration.globalCounterEpisode = _Configuration.globalCounterEpisode or 0
+    _Configuration.globalCounterSectionID = _Configuration.globalCounterSectionID or 0
+    _Configuration.globalCounterArea = _Configuration.globalCounterArea or 0
 
-        io.write("return {\n")
-        io.write(string.format("    configurationWindow = %s,\n", tostring(_Configuration.configurationWindow)))
-        io.write(string.format("    globalCounterWindow = %s,\n", tostring(_Configuration.globalCounterWindow)))
-        io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
-        io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
-        io.write(string.format("    sessionCounterDetailWindow = %s,\n", tostring(_Configuration.sessionCounterDetailWindow)))
-        io.write(string.format("    sessionInfoWindow = %s,\n", tostring(_Configuration.sessionInfoWindow)))
-        io.write(string.format("    fontScale = %f,\n", _Configuration.fontScale))
-        io.write("\n")
-        io.write(string.format("    globalCounterDimensionsLocked = %s,\n", tostring(_Configuration.globalCounterDimensionsLocked)))
-        io.write(string.format("    globalCounterDifficulty = %f,\n", _Configuration.globalCounterDifficulty))
-        io.write(string.format("    globalCounterEpisode = %f,\n", _Configuration.globalCounterEpisode))
-        io.write(string.format("    globalCounterSectionID = %f,\n", _Configuration.globalCounterSectionID))
-        io.write(string.format("    globalCounterArea = %f,\n", _Configuration.globalCounterArea))
-        io.write("\n")
-        io.write(string.format("    sessionCounterDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDimensionsLocked)))
-        io.write(string.format("    sessionCounterDifficulty = %f,\n", _Configuration.sessionCounterDifficulty))
-        io.write(string.format("    sessionCounterEpisode = %f,\n", _Configuration.sessionCounterEpisode))
-        io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
-        io.write(string.format("    sessionCounterArea = %f,\n", _Configuration.sessionCounterArea))
-        io.write("\n")
-        io.write(string.format("    lockRoomID = %s\n", tostring(_Configuration.lockRoomID)))
-        io.write("}\n")
+    _Configuration.sessionCounterDimensionsLocked = (_Configuration.sessionCounterDimensionsLocked ~= nil) and _Configuration.sessionCounterDimensionsLocked
+    _Configuration.sessionCounterDifficulty = _Configuration.sessionCounterDifficulty or 0
+    _Configuration.sessionCounterEpisode = _Configuration.sessionCounterEpisode or 0
+    _Configuration.sessionCounterSectionID = _Configuration.sessionCounterSectionID or 0
+    _Configuration.sessionCounterArea = _Configuration.sessionCounterArea or 0
 
-        io.close(file)
+    _Configuration.globalCounterWindowDisplayMode = _Configuration.globalCounterWindowDisplayMode or 1
+    _Configuration.globalCounterDetailWindowDisplayMode = _Configuration.globalCounterDetailWindowDisplayMode or 1
+    _Configuration.sessionCounterWindowDisplayMode = _Configuration.sessionCounterWindowDisplayMode or 1
+    _Configuration.sessionCounterDetailWindowDisplayMode = _Configuration.sessionCounterDetailWindowDisplayMode or 1
+    _Configuration.sessionInfoWindowDisplayMode = _Configuration.sessionInfoWindowDisplayMode or 1
+
+    if _Configuration.lockRoomID == nil then
+        local ephinea = io.open("ephinea.dll", "r")
+
+        _Configuration.lockRoomID = false
+
+        if ephinea ~= nil then
+            io.close(ephinea)
+            _Configuration.lockRoomID = true
+        end
+    end
+
+    _Configuration.serialize = function(configurationPath)
+        local file = io.open(configurationPath, "w+")
+
+        if file ~= nil then
+            io.output(file)
+
+            io.write("return {\n")
+            io.write(string.format("    configurationWindow = %s,\n", tostring(_Configuration.configurationWindow)))
+            io.write(string.format("    globalCounterWindow = %s,\n", tostring(_Configuration.globalCounterWindow)))
+            io.write(string.format("    globalCounterDetailWindow = %s,\n", tostring(_Configuration.globalCounterDetailWindow)))
+            io.write(string.format("    sessionCounterWindow = %s,\n", tostring(_Configuration.sessionCounterWindow)))
+            io.write(string.format("    sessionCounterDetailWindow = %s,\n", tostring(_Configuration.sessionCounterDetailWindow)))
+            io.write(string.format("    sessionInfoWindow = %s,\n", tostring(_Configuration.sessionInfoWindow)))
+            io.write(string.format("    fontScale = %f,\n", _Configuration.fontScale))
+            io.write("\n")
+            io.write(string.format("    globalCounterDimensionsLocked = %s,\n", tostring(_Configuration.globalCounterDimensionsLocked)))
+            io.write(string.format("    globalCounterDifficulty = %f,\n", _Configuration.globalCounterDifficulty))
+            io.write(string.format("    globalCounterEpisode = %f,\n", _Configuration.globalCounterEpisode))
+            io.write(string.format("    globalCounterSectionID = %f,\n", _Configuration.globalCounterSectionID))
+            io.write(string.format("    globalCounterArea = %f,\n", _Configuration.globalCounterArea))
+            io.write("\n")
+            io.write(string.format("    sessionCounterDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDimensionsLocked)))
+            io.write(string.format("    sessionCounterDifficulty = %f,\n", _Configuration.sessionCounterDifficulty))
+            io.write(string.format("    sessionCounterEpisode = %f,\n", _Configuration.sessionCounterEpisode))
+            io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
+            io.write(string.format("    sessionCounterArea = %f,\n", _Configuration.sessionCounterArea))
+            io.write("\n")
+            io.write(string.format("    lockRoomID = %s\n", tostring(_Configuration.lockRoomID)))
+            io.write("}\n")
+
+            io.close(file)
+        end
     end
 end
 
@@ -1004,9 +1015,26 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.PushItemWidth(100)
+            local difficultyLabelSize = imgui.CalcTextSize("Difficulty")
+            local episodeLabelSize = imgui.CalcTextSize("Episode")
+            local sectionIDLabelSize = imgui.CalcTextSize("Section ID")
+            local areaLabelSize = imgui.CalcTextSize("Area")
+
+            local labelWidth1 = math.max(difficultyLabelSize, sectionIDLabelSize)
+            local labelWidth2 = math.max(episodeLabelSize, areaLabelSize)
+
+            -- Difficulty selection combo box
             local difficulty = _configuration.globalCounterDifficulty + 1
-            success,difficulty = imgui.Combo("Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth1 - difficultyLabelSize)
+            imgui.Text("Difficulty")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,difficulty = imgui.Combo("##Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 50)
 
             if (_configuration.globalCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.globalCounterDifficulty = difficulty - 1
@@ -1014,9 +1042,17 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.SameLine(0, 50)
+            -- Episode selection combo box
             local episode = _configuration.globalCounterEpisode + 1
-            success,episode = imgui.Combo("Episode", episode, _episodes, table.getn(_episodes))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth2 - episodeLabelSize)
+            imgui.Text("Episode")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,episode = imgui.Combo("##Episode", episode, _episodes, table.getn(_episodes))
+            imgui.PopItemWidth()
 
             if (_configuration.globalCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.globalCounterEpisode = episode - 1
@@ -1024,8 +1060,18 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
+            -- Section ID selection combo box
             local sectionID = _configuration.globalCounterSectionID + 1
-            success,sectionID = imgui.Combo("Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth1 - sectionIDLabelSize)
+            imgui.Text("Section ID")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,sectionID = imgui.Combo("##Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 50)
 
             if (_configuration.globalCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.globalCounterSectionID = sectionID - 1
@@ -1033,11 +1079,17 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.PopItemWidth()
-            imgui.PushItemWidth(200)
-            imgui.SameLine(0, 50)
+            -- Area selection combo box
             local area = _configuration.globalCounterArea + 1
-            success,area = imgui.Combo("Area", area, _areas, table.getn(_areas))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth2 - areaLabelSize)
+            imgui.Text("Area")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(200)
+            success,area = imgui.Combo("##Area", area, _areas, table.getn(_areas))
+            imgui.PopItemWidth()
 
             if (_configuration.globalCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.globalCounterArea = area - 1
@@ -1045,7 +1097,7 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.PopItemWidth()
+            imgui.Columns(1)
             imgui.TreePop()
         end
     end
@@ -1064,9 +1116,26 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.PushItemWidth(100)
+            local difficultyLabelSize = imgui.CalcTextSize("Difficulty")
+            local episodeLabelSize = imgui.CalcTextSize("Episode")
+            local sectionIDLabelSize = imgui.CalcTextSize("Section ID")
+            local areaLabelSize = imgui.CalcTextSize("Area")
+
+            local labelWidth1 = math.max(difficultyLabelSize, sectionIDLabelSize)
+            local labelWidth2 = math.max(episodeLabelSize, areaLabelSize)
+
+            -- Difficulty selection combo box
             local difficulty = _configuration.sessionCounterDifficulty + 1
-            success,difficulty = imgui.Combo("Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth1 - difficultyLabelSize)
+            imgui.Text("Difficulty")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,difficulty = imgui.Combo("##Difficulty", difficulty, _difficulties, table.getn(_difficulties))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.sessionCounterDifficulty = difficulty - 1
@@ -1074,9 +1143,17 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.SameLine(0, 50)
+            -- Episode selection combo box
             local episode = _configuration.sessionCounterEpisode + 1
-            success,episode = imgui.Combo("Episode", episode, _episodes, table.getn(_episodes))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth2 - episodeLabelSize)
+            imgui.Text("Episode")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,episode = imgui.Combo("##Episode", episode, _episodes, table.getn(_episodes))
+            imgui.PopItemWidth()
 
             if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.sessionCounterEpisode = episode - 1
@@ -1084,8 +1161,18 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
+            -- Section ID selection combo box
             local sectionID = _configuration.sessionCounterSectionID + 1
-            success,sectionID = imgui.Combo("Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth1 - sectionIDLabelSize)
+            imgui.Text("Section ID")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(100)
+            success,sectionID = imgui.Combo("##Section ID", sectionID, _sectionIDs, table.getn(_sectionIDs))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.sessionCounterSectionID = sectionID - 1
@@ -1093,11 +1180,17 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.PopItemWidth()
-            imgui.PushItemWidth(200)
-            imgui.SameLine(0, 50)
+            -- Area selection combo box
             local area = _configuration.sessionCounterArea + 1
-            success,area = imgui.Combo("Area", area, _areas, table.getn(_areas))
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth2 - areaLabelSize)
+            imgui.Text("Area")
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(200)
+            success,area = imgui.Combo("##Area", area, _areas, table.getn(_areas))
+            imgui.PopItemWidth()
 
             if (_configuration.sessionCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
                 _configuration.sessionCounterArea = area - 1
@@ -1105,7 +1198,120 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
+            imgui.TreePop()
+        end
+    end
+
+    local _showDisplayModes = function()
+        local success, mode
+
+        if imgui.TreeNodeEx("Window Display Modes") then
+            local globalKillCountersLabel = "Global Kill Counters"
+            local globalKillCountersDetailLabel = "Global Kill Counter Detail"
+            local sessionKillCountersLabel = "Session Kill Counters"
+            local sessionKillCountersDetailLabel = "Session Kill Counter Detail"
+            local sessionInfoLabel = "Session Info Counters"
+
+            local globalKillCountersLabelWidth = imgui.CalcTextSize(globalKillCountersLabel)
+            local globalKillCountersDetailLabelWidth = imgui.CalcTextSize(globalKillCountersDetailLabel)
+            local sessionKillCountersLabelWidth = imgui.CalcTextSize(sessionKillCountersLabel)
+            local sessionKillCountersDetailLabelWidth = imgui.CalcTextSize(sessionKillCountersDetailLabel)
+            local sessionInfoLabelWidth = imgui.CalcTextSize(sessionInfoLabel)
+
+            local widths = {
+                globalKillCountersLabelWidth,
+                globalKillCountersDetailLabelWidth,
+                sessionKillCountersLabelWidth,
+                sessionKillCountersDetailLabelWidth,
+                sessionInfoLabelWidth
+            }
+
+            local labelWidth = 0
+
+            for _,width in ipairs(widths) do
+                labelWidth = math.max(labelWidth, width)
+            end
+
+            -- Global Kill Counter Window Display Mode
+            mode = _configuration.globalCounterWindowDisplayMode
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth - globalKillCountersLabelWidth)
+            imgui.Text(globalKillCountersLabel)
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Global Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+
+            _hasChanged = _hasChanged or (_configuration.globalCounterWindowDisplayMode ~= mode)
+            _configuration.globalCounterWindowDisplayMode = mode
+            this.globalCounterWindow.displayMode = mode
+
+            -- Global Kill Counter Detail Window Display Mode
+            mode = _configuration.globalCounterDetailWindowDisplayMode
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth - globalKillCountersDetailLabelWidth)
+            imgui.Text(globalKillCountersDetailLabel)
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Global Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+
+            _hasChanged = _hasChanged or (_configuration.globalCounterDetailWindowDisplayMode ~= mode)
+            _configuration.globalCounterDetailWindowDisplayMode = mode
+            this.globalCounterDetailWindow.displayMode = mode
+
+            -- Session Kill Counter Window Display Mode
+            mode = _configuration.sessionCounterWindowDisplayMode
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth - sessionKillCountersLabelWidth)
+            imgui.Text(sessionKillCountersLabel)
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Session Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+
+            _hasChanged = _hasChanged or (_configuration.sessionCounterWindowDisplayMode ~= mode)
+            _configuration.sessionCounterWindowDisplayMode = mode
+            this.sessionCounterWindow.displayMode = mode
+
+            -- Session Kill Counter Detail Window Display Mode
+            mode = _configuration.sessionCounterDetailWindowDisplayMode
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth - sessionKillCountersDetailLabelWidth)
+            imgui.Text(sessionKillCountersDetailLabel)
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Session Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+
+            _hasChanged = _hasChanged or (_configuration.sessionCounterDetailWindowDisplayMode ~= mode)
+            _configuration.sessionCounterDetailWindowDisplayMode = mode
+            this.sessionCounterDetailWindow.displayMode = mode
+
+            -- Session Info Counter Window Display Mode
+            mode = _configuration.sessionInfoWindowDisplayMode
+
+            imgui.Dummy(0, 0)
+            imgui.SameLine(0, labelWidth - sessionInfoLabelWidth)
+            imgui.Text(sessionInfoLabel)
+            imgui.SameLine(0, 10)
+
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Session Info Counters", mode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+
+            _hasChanged = _hasChanged or (_configuration.sessionInfoWindowDisplayMode ~= mode)
+            _configuration.sessionInfoWindowDisplayMode = mode
+            this.sessionInfoWindow.displayMode = mode
+
             imgui.TreePop()
         end
     end
@@ -1138,6 +1344,7 @@ local function ConfigurationWindow(configuration)
         _showWindowSettings()
         _showGlobalCounterSettings()
         _showSessionCounterSettings()
+        _showDisplayModes()
         _showAdvancedSettings()
 
         imgui.End()
@@ -1162,6 +1369,7 @@ local function KillCounterWindow(killCounter)
     local this = {
         title = "Kill Counter - Main",
         fontScale = 1.0,
+        displayMode = 1,
         open = false
     }
 
@@ -1189,8 +1397,18 @@ local function KillCounterWindow(killCounter)
         end
     end
 
-    this.update = function()
+    this.update = function(isMenuOpen)
         if not this.open then
+            return
+        end
+
+        local displayMode = _DisplayModes[this.displayMode]
+
+        if (displayMode == "Show with menu") and not isMenuOpen then
+            return
+        end
+
+        if (displayMode == "Hide with menu") and isMenuOpen then
             return
         end
 
@@ -1212,6 +1430,7 @@ local function KillCounterDetailWindow(killCounter)
     local this = {
         title = "Kill Counter - Detail",
         fontScale = 1.0,
+        displayMode = 1,
         open = false,
         exportFilePath = "kill-counters-export.txt"
     }
@@ -1243,8 +1462,18 @@ local function KillCounterDetailWindow(killCounter)
         end
     end
 
-    this.update = function()
+    this.update = function(isMenuOpen)
         if not this.open then
+            return
+        end
+
+        local displayMode = _DisplayModes[this.displayMode]
+
+        if (displayMode == "Show with menu") and not isMenuOpen then
+            return
+        end
+
+        if (displayMode == "Hide with menu") and isMenuOpen then
             return
         end
 
@@ -1272,6 +1501,7 @@ end
 local function SessionInfoWindow(session)
     local this = {
         title = "Kill Counter - Session Info",
+        displayMode = 1,
         open = false
     }
 
@@ -1314,8 +1544,18 @@ local function SessionInfoWindow(session)
         imgui.Text(string.format("Dungeon Time: %s", _getFormattedTimeSpent(timeSpentInDungeon)))
     end
 
-    this.update = function()
+    this.update = function(isMenuOpen)
         if not this.open then
+            return
+        end
+
+        local displayMode = _DisplayModes[this.displayMode]
+
+        if (displayMode == "Show with menu") and not isMenuOpen then
+            return
+        end
+
+        if (displayMode == "Hide with menu") and isMenuOpen then
             return
         end
 
@@ -1334,6 +1574,8 @@ local function SessionInfoWindow(session)
 end
 
 local function present()
+    local isMenuOpen = (pso.read_u32(_MenuPointer) == 1)
+
     _Dimensions.update()
     _MonsterTable.update()
     _GlobalCounter.update()
@@ -1341,11 +1583,11 @@ local function present()
     _Session.update()
 
     _ConfigurationWindow.update()
-    _GlobalCounterWindow.update()
-    _GlobalCounterDetailWindow.update()
-    _SessionCounterWindow.update()
-    _SessionCounterDetailWindow.update()
-    _SessionInfoWindow.update()
+    _GlobalCounterWindow.update(isMenuOpen)
+    _GlobalCounterDetailWindow.update(isMenuOpen)
+    _SessionCounterWindow.update(isMenuOpen)
+    _SessionCounterDetailWindow.update(isMenuOpen)
+    _SessionInfoWindow.update(isMenuOpen)
 
     _Dimensions.lockRoomID = _Configuration.lockRoomID
 
@@ -1407,6 +1649,8 @@ local function present()
 end
 
 local function init()
+    LoadConfiguration()
+
     _Dimensions = Dimensions()
     _MonsterTable = MonsterTable(_Dimensions)
     _GlobalCounter = KillCounter(_Dimensions, _MonsterTable)
@@ -1459,7 +1703,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.0.10",
+        version = "2.1.0",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
