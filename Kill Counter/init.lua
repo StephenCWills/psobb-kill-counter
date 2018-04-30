@@ -136,6 +136,12 @@ local function LoadConfiguration()
             io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
             io.write(string.format("    sessionCounterArea = %f,\n", _Configuration.sessionCounterArea))
             io.write("\n")
+            io.write(string.format("    globalCounterWindowDisplayMode = %f,\n", _Configuration.globalCounterWindowDisplayMode))
+            io.write(string.format("    globalCounterDetailWindowDisplayMode = %f,\n", _Configuration.globalCounterDetailWindowDisplayMode))
+            io.write(string.format("    sessionCounterWindowDisplayMode = %f,\n", _Configuration.sessionCounterWindowDisplayMode))
+            io.write(string.format("    sessionCounterDetailWindowDisplayMode = %f,\n", _Configuration.sessionCounterDetailWindowDisplayMode))
+            io.write(string.format("    sessionInfoWindowDisplayMode = %f,\n", _Configuration.sessionInfoWindowDisplayMode))
+            io.write("\n")
             io.write(string.format("    lockRoomID = %s\n", tostring(_Configuration.lockRoomID)))
             io.write("}\n")
 
@@ -1663,27 +1669,32 @@ local function init()
     _GlobalCounterWindow = KillCounterWindow(_GlobalCounter)
     _GlobalCounterWindow.title = "Kill Counter - Global"
     _GlobalCounterWindow.fontScale = _Configuration.fontScale
+    _GlobalCounterWindow.displayMode = _Configuration.globalCounterWindowDisplayMode
     _GlobalCounterWindow.open = _Configuration.globalCounterWindow
 
     _GlobalCounterDetailWindow = KillCounterDetailWindow(_GlobalCounter)
     _GlobalCounterDetailWindow.title = "Kill Counter - Global Detail"
     _GlobalCounterDetailWindow.fontScale = _Configuration.fontScale
+    _GlobalCounterDetailWindow.displayMode = _Configuration.globalCounterDetailWindowDisplayMode
     _GlobalCounterDetailWindow.open = _Configuration.globalCounterDetailWindow
 
     _SessionCounterWindow = KillCounterWindow(_SessionCounter)
     _SessionCounterWindow.title = "Kill Counter - Session"
     _SessionCounterWindow.fontScale = _Configuration.fontScale
+    _SessionCounterWindow.displayMode = _Configuration.sessionCounterWindowDisplayMode
     _SessionCounterWindow.open = _Configuration.sessionCounterWindow
 
     _SessionCounterDetailWindow = KillCounterDetailWindow(_SessionCounter)
     _SessionCounterDetailWindow.title = "Kill Counter - Session Detail"
     _SessionCounterDetailWindow.fontScale = _Configuration.fontScale
+    _SessionCounterDetailWindow.displayMode = _Configuration.sessionCounterDetailWindowDisplayMode
     _SessionCounterDetailWindow.open = _Configuration.sessionCounterDetailWindow
     _SessionCounterDetailWindow.exportFilePath = "session-counters-export.txt"
 
     _SessionInfoWindow = SessionInfoWindow(_Session)
     _SessionInfoWindow.title = "Kill Counter - Session Info"
     _SessionInfoWindow.fontScale = _Configuration.fontScale
+    _SessionInfoWindow.displayMode = _Configuration.sessionInfoWindowDisplayMode
     _SessionInfoWindow.open = _Configuration.sessionInfoWindow
 
     _ConfigurationWindow = ConfigurationWindow(_Configuration)
@@ -1703,7 +1714,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.1.0",
+        version = "2.1.1",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
