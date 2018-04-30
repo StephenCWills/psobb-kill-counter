@@ -1103,7 +1103,6 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
-            imgui.Columns(1)
             imgui.TreePop()
         end
     end
