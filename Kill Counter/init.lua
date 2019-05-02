@@ -81,6 +81,7 @@ local function LoadConfiguration()
     _Configuration.fontScale = _Configuration.fontScale or 1.0
 
     _Configuration.globalCounterDimensionsLocked = (_Configuration.globalCounterDimensionsLocked ~= nil) and _Configuration.globalCounterDimensionsLocked
+    _Configuration.globalCounterResizeLocked = (_Configuration.globalCounterResizeLocked ~= nil) and _Configuration.globalCounterResizeLocked
     _Configuration.globalCounterMoveLocked = (_Configuration.globalCounterMoveLocked ~= nil) and _Configuration.globalCounterMoveLocked
     _Configuration.globalCounterNoTitleBar = (_Configuration.globalCounterNoTitleBar ~= nil) and _Configuration.globalCounterNoTitleBar
     _Configuration.globalCounterDifficulty = _Configuration.globalCounterDifficulty or 0
@@ -89,6 +90,7 @@ local function LoadConfiguration()
     _Configuration.globalCounterArea = _Configuration.globalCounterArea or 0
 
     _Configuration.sessionCounterDimensionsLocked = (_Configuration.sessionCounterDimensionsLocked ~= nil) and _Configuration.sessionCounterDimensionsLocked
+    _Configuration.sessionCounterResizeLocked = (_Configuration.sessionCounterResizeLocked ~= nil) and _Configuration.sessionCounterResizeLocked
     _Configuration.sessionCounterMoveLocked = (_Configuration.sessionCounterMoveLocked ~= nil) and _Configuration.sessionCounterMoveLocked
     _Configuration.sessionCounterNoTitleBar = (_Configuration.sessionCounterNoTitleBar ~= nil) and _Configuration.sessionCounterNoTitleBar
     _Configuration.sessionCounterDifficulty = _Configuration.sessionCounterDifficulty or 0
@@ -129,6 +131,7 @@ local function LoadConfiguration()
             io.write(string.format("    fontScale = %f,\n", _Configuration.fontScale))
             io.write("\n")
             io.write(string.format("    globalCounterDimensionsLocked = %s,\n", tostring(_Configuration.globalCounterDimensionsLocked)))
+            io.write(string.format("    globalCounterResizeLocked = %s,\n", tostring(_Configuration.globalCounterResizeLocked)))
             io.write(string.format("    globalCounterMoveLocked = %s,\n", _Configuration.globalCounterMoveLocked))
             io.write(string.format("    globalCounterNoTitleBar = %s,\n", _Configuration.globalCounterNoTitleBar))
             io.write(string.format("    globalCounterDifficulty = %f,\n", _Configuration.globalCounterDifficulty))
@@ -137,6 +140,7 @@ local function LoadConfiguration()
             io.write(string.format("    globalCounterArea = %f,\n", _Configuration.globalCounterArea))
             io.write("\n")
             io.write(string.format("    sessionCounterDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDimensionsLocked)))
+            io.write(string.format("    sessionCounterResizeLocked = %s,\n", tostring(_Configuration.sessionCounterResizeLocked)))
             io.write(string.format("    sessionCounterMoveLocked = %s,\n", _Configuration.sessionCounterMoveLocked))
             io.write(string.format("    sessionCounterNoTitleBar = %s,\n", _Configuration.sessionCounterNoTitleBar))
             io.write(string.format("    sessionCounterDifficulty = %f,\n", _Configuration.sessionCounterDifficulty))
@@ -1023,13 +1027,19 @@ local function ConfigurationWindow(configuration)
                 this.globalCounterWindow.open = not this.globalCounterWindow.open
             end
 
+            imgui.SameLine(0, 50)
             if imgui.Checkbox("Dimensions Locked", _configuration.globalCounterDimensionsLocked) then
                 _configuration.globalCounterDimensionsLocked = not _configuration.globalCounterDimensionsLocked
                 _hasChanged = true
             end
 
+            if imgui.Checkbox("No resize", _configuration.globalCounterResizeLocked) then
+                _configuration.globalCounterResizeLocked = not _configuration.globalCounterResizeLocked
+                _hasChanged = true
+            end
+
             imgui.SameLine(0, 50)
-            if imgui.Checkbox("Move Locked", _configuration.globalCounterMoveLocked) then
+            if imgui.Checkbox("No move", _configuration.globalCounterMoveLocked) then
                 _configuration.globalCounterMoveLocked = not _configuration.globalCounterMoveLocked
                 _hasChanged = true
             end
@@ -1134,13 +1144,19 @@ local function ConfigurationWindow(configuration)
                 this.sessionCounterWindow.open = not this.sessionCounterWindow.open
             end
 
+            imgui.SameLine(0, 50)
             if imgui.Checkbox("Dimensions Locked", _configuration.sessionCounterDimensionsLocked) then
                 _configuration.sessionCounterDimensionsLocked = not _configuration.sessionCounterDimensionsLocked
                 _hasChanged = true
             end
 
+            if imgui.Checkbox("No resize", _configuration.sessionCounterResizeLocked) then
+                _configuration.sessionCounterResizeLocked = not _configuration.sessionCounterResizeLocked
+                _hasChanged = true
+            end
+
             imgui.SameLine(0, 50)
-            if imgui.Checkbox("Move Locked", _configuration.sessionCounterMoveLocked) then
+            if imgui.Checkbox("No move", _configuration.sessionCounterMoveLocked) then
                 _configuration.sessionCounterMoveLocked = not _configuration.sessionCounterMoveLocked
                 _hasChanged = true
             end
@@ -1173,7 +1189,8 @@ local function ConfigurationWindow(configuration)
             imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterDifficulty = difficulty - 1
+                _configuration.sessionCounterDifficulty = difficulty - 1 
+                _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
 
@@ -1190,7 +1207,8 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
 
             if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterEpisode = episode - 1
+                _configuration.sessionCounterEpisode = episode - 1 
+                _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
 
@@ -1208,7 +1226,8 @@ local function ConfigurationWindow(configuration)
             imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterSectionID = sectionID - 1
+                _configuration.sessionCounterSectionID = sectionID - 1 
+                _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
 
@@ -1225,7 +1244,8 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
 
             if (_configuration.sessionCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterArea = area - 1
+                _configuration.sessionCounterArea = area - 1 
+                _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
 
@@ -1673,11 +1693,11 @@ local function present()
         _Configuration.sessionInfoWindow = _SessionInfoWindow.open
         _Configuration.serialize(_ConfigurationPath)
 		
-		_GlobalCounterWindow.resize = (_Configuration.globalCounterDimensionsLocked and 'NoResize' or '')
+		_GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
 		_GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
 		_GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
 		
-		_SessionCounterWindow.resize = (_Configuration.sessionCounterDimensionsLocked and 'NoResize' or '')
+		_SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
 		_SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
 		_SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
     end
@@ -1710,7 +1730,7 @@ local function init()
     _GlobalCounterWindow.fontScale = _Configuration.fontScale
     _GlobalCounterWindow.displayMode = _Configuration.globalCounterWindowDisplayMode
     _GlobalCounterWindow.open = _Configuration.globalCounterWindow
-    _GlobalCounterWindow.resize = (_Configuration.globalCounterDimensionsLocked and 'NoResize' or '')
+    _GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
     _GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
     _GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
 
@@ -1725,7 +1745,7 @@ local function init()
     _SessionCounterWindow.fontScale = _Configuration.fontScale
     _SessionCounterWindow.displayMode = _Configuration.sessionCounterWindowDisplayMode
     _SessionCounterWindow.open = _Configuration.sessionCounterWindow
-    _SessionCounterWindow.resize = (_Configuration.sessionCounterDimensionsLocked and 'NoResize' or '')
+    _SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
     _SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
     _SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
 
