@@ -1428,6 +1428,7 @@ local function KillCounterWindow(killCounter)
     }
 
     local _killCounter = killCounter
+	local _firstRender = true
 
     local _showCounters = function()
         local i
@@ -1465,11 +1466,18 @@ local function KillCounterWindow(killCounter)
         if (displayMode == "Hide with menu") and isMenuOpen then
             return
         end
-
+		
         local success
+		local resize = this.resize
+		
+		-- imgui does not honor size settings if resize is disabled
+		if (_firstRender) then
+			resize = ''
+			_firstRender = false
+		end
 
         imgui.SetNextWindowSize(270, 380, 'FirstUseEver')
-        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, this.resize, this.move})
+        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, resize, this.move})
         imgui.SetWindowFontScale(this.fontScale)
 
         _showCounters()
@@ -1563,6 +1571,7 @@ local function SessionInfoWindow(session)
     }
 
     local _session = session
+	local _firstRender = true
 
     local _getValueOverTimeSpent = function(value, timeSpent)
         local valueOverTime = value / timeSpent
@@ -1617,9 +1626,16 @@ local function SessionInfoWindow(session)
         end
 
         local success
+		local resize = this.resize
+		
+		-- imgui does not honor size settings if resize is disabled
+		if (_firstRender) then
+			resize = ''
+			_firstRender = false
+		end
 
         imgui.SetNextWindowSize(310, 200, 'FirstUseEver')
-        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, this.resize, this.move})
+        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, resize, this.move})
         imgui.SetWindowFontScale(this.fontScale)
 
         _showSessionInfo()
