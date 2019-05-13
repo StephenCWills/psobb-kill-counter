@@ -1189,7 +1189,7 @@ local function ConfigurationWindow(configuration)
             imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterDifficulty = difficulty - 1 
+                _configuration.sessionCounterDifficulty = difficulty - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
@@ -1207,7 +1207,7 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
 
             if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterEpisode = episode - 1 
+                _configuration.sessionCounterEpisode = episode - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
@@ -1226,7 +1226,7 @@ local function ConfigurationWindow(configuration)
             imgui.SameLine(0, 50)
 
             if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterSectionID = sectionID - 1 
+                _configuration.sessionCounterSectionID = sectionID - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
@@ -1244,7 +1244,7 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
 
             if (_configuration.sessionCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
-                _configuration.sessionCounterArea = area - 1 
+                _configuration.sessionCounterArea = area - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
             end
@@ -1466,10 +1466,10 @@ local function KillCounterWindow(killCounter)
         if (displayMode == "Hide with menu") and isMenuOpen then
             return
         end
-		
+
         local success
 		local resize = this.resize
-		
+
 		-- imgui does not honor size settings if resize is disabled
 		if (_firstRender) then
 			resize = ''
@@ -1627,7 +1627,7 @@ local function SessionInfoWindow(session)
 
         local success
 		local resize = this.resize
-		
+
 		-- imgui does not honor size settings if resize is disabled
 		if (_firstRender) then
 			resize = ''
@@ -1708,11 +1708,11 @@ local function present()
         _Configuration.sessionCounterDetailWindow = _SessionCounterDetailWindow.open
         _Configuration.sessionInfoWindow = _SessionInfoWindow.open
         _Configuration.serialize(_ConfigurationPath)
-		
+
 		_GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
 		_GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
 		_GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
-		
+
 		_SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
 		_SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
 		_SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
