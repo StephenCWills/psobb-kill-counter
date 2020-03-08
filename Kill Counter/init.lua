@@ -98,6 +98,12 @@ local function LoadConfiguration()
     _Configuration.sessionCounterDetailWindowDisplayMode = _Configuration.sessionCounterDetailWindowDisplayMode or 1
     _Configuration.sessionInfoWindowDisplayMode = _Configuration.sessionInfoWindowDisplayMode or 1
 
+    _Configuration.globalCounterWindowTransparent = (_Configuration.globalCounterWindowTransparent ~= nil) and _Configuration.globalCounterWindowTransparent
+    _Configuration.globalCounterDetailWindowTransparent = (_Configuration.globalCounterDetailWindowTransparent ~= nil) and _Configuration.globalCounterDetailWindowTransparent
+    _Configuration.sessionCounterWindowTransparent = (_Configuration.sessionCounterWindowTransparent ~= nil) and _Configuration.sessionCounterWindowTransparent
+    _Configuration.sessionCounterDetailWindowTransparent = (_Configuration.sessionCounterDetailWindowTransparent ~= nil) and _Configuration.sessionCounterDetailWindowTransparent
+    _Configuration.sessionInfoWindowTransparent = (_Configuration.sessionInfoWindowTransparent ~= nil) and _Configuration.sessionInfoWindowTransparent
+
     if _Configuration.lockRoomID == nil then
         local ephinea = io.open("ephinea.dll", "r")
 
@@ -141,6 +147,12 @@ local function LoadConfiguration()
             io.write(string.format("    sessionCounterWindowDisplayMode = %f,\n", _Configuration.sessionCounterWindowDisplayMode))
             io.write(string.format("    sessionCounterDetailWindowDisplayMode = %f,\n", _Configuration.sessionCounterDetailWindowDisplayMode))
             io.write(string.format("    sessionInfoWindowDisplayMode = %f,\n", _Configuration.sessionInfoWindowDisplayMode))
+            io.write("\n")
+            io.write(string.format("    globalCounterWindowTransparent = %s,\n", tostring(_Configuration.globalCounterWindowTransparent)))
+            io.write(string.format("    globalCounterDetailWindowTransparent = %s,\n", tostring(_Configuration.globalCounterDetailWindowTransparent)))
+            io.write(string.format("    sessionCounterWindowTransparent = %s,\n", tostring(_Configuration.sessionCounterWindowTransparent)))
+            io.write(string.format("    sessionCounterDetailWindowTransparent = %s,\n", tostring(_Configuration.sessionCounterDetailWindowTransparent)))
+            io.write(string.format("    sessionInfoWindowTransparent = %s,\n", tostring(_Configuration.sessionInfoWindowTransparent)))
             io.write("\n")
             io.write(string.format("    lockRoomID = %s\n", tostring(_Configuration.lockRoomID)))
             io.write("}\n")
@@ -1248,6 +1260,15 @@ local function ConfigurationWindow(configuration)
             imgui.PushItemWidth(125)
             success,mode = imgui.Combo("##Global Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+
+            imgui.PushID("Global Counter")
+            if imgui.Checkbox("Transparent", _configuration.globalCounterWindowTransparent) then
+                _configuration.globalCounterWindowTransparent = not _configuration.globalCounterWindowTransparent
+                this.globalCounterWindow.transparent = _configuration.globalCounterWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
 
             _hasChanged = _hasChanged or (_configuration.globalCounterWindowDisplayMode ~= mode)
             _configuration.globalCounterWindowDisplayMode = mode
@@ -1264,6 +1285,15 @@ local function ConfigurationWindow(configuration)
             imgui.PushItemWidth(125)
             success,mode = imgui.Combo("##Global Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+
+            imgui.PushID("Global Counter Detail")
+            if imgui.Checkbox("Transparent", _configuration.globalCounterDetailWindowTransparent) then
+                _configuration.globalCounterDetailWindowTransparent = not _configuration.globalCounterDetailWindowTransparent
+                this.globalCounterDetailWindow.transparent = _configuration.globalCounterDetailWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
 
             _hasChanged = _hasChanged or (_configuration.globalCounterDetailWindowDisplayMode ~= mode)
             _configuration.globalCounterDetailWindowDisplayMode = mode
@@ -1280,6 +1310,15 @@ local function ConfigurationWindow(configuration)
             imgui.PushItemWidth(125)
             success,mode = imgui.Combo("##Session Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+
+            imgui.PushID("Session Counter")
+            if imgui.Checkbox("Transparent", _configuration.sessionCounterWindowTransparent) then
+                _configuration.sessionCounterWindowTransparent = not _configuration.sessionCounterWindowTransparent
+                this.sessionCounterWindow.transparent = _configuration.sessionCounterWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
 
             _hasChanged = _hasChanged or (_configuration.sessionCounterWindowDisplayMode ~= mode)
             _configuration.sessionCounterWindowDisplayMode = mode
@@ -1296,6 +1335,15 @@ local function ConfigurationWindow(configuration)
             imgui.PushItemWidth(125)
             success,mode = imgui.Combo("##Session Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+
+            imgui.PushID("Session Counter Detail")
+            if imgui.Checkbox("Transparent", _configuration.sessionCounterDetailWindowTransparent) then
+                _configuration.sessionCounterDetailWindowTransparent = not _configuration.sessionCounterDetailWindowTransparent
+                this.sessionCounterDetailWindow.transparent = _configuration.sessionCounterDetailWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
 
             _hasChanged = _hasChanged or (_configuration.sessionCounterDetailWindowDisplayMode ~= mode)
             _configuration.sessionCounterDetailWindowDisplayMode = mode
@@ -1312,6 +1360,15 @@ local function ConfigurationWindow(configuration)
             imgui.PushItemWidth(125)
             success,mode = imgui.Combo("##Session Info Counters", mode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+
+            imgui.PushID("Session Info")
+            if imgui.Checkbox("Transparent", _configuration.sessionInfoWindowTransparent) then
+                _configuration.sessionInfoWindowTransparent = not _configuration.sessionInfoWindowTransparent
+                this.sessionInfoWindow.transparent = _configuration.sessionInfoWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
 
             _hasChanged = _hasChanged or (_configuration.sessionInfoWindowDisplayMode ~= mode)
             _configuration.sessionInfoWindowDisplayMode = mode
@@ -1375,6 +1432,7 @@ local function KillCounterWindow(killCounter)
         title = "Kill Counter - Main",
         fontScale = 1.0,
         displayMode = 1,
+        transparent = false,
         open = false
     }
 
@@ -1417,6 +1475,10 @@ local function KillCounterWindow(killCounter)
             return
         end
 
+        if this.transparent then
+            imgui.PushStyleColor("WindowBg", 0.0, 0.0, 0.0, 0.0)
+        end
+
         local success
 
         imgui.SetNextWindowSize(270, 380, 'FirstUseEver')
@@ -1426,6 +1488,10 @@ local function KillCounterWindow(killCounter)
         _showCounters()
 
         imgui.End()
+
+        if this.transparent then
+            imgui.PopStyleColor()
+        end
     end
 
     return this
@@ -1436,6 +1502,7 @@ local function KillCounterDetailWindow(killCounter)
         title = "Kill Counter - Detail",
         fontScale = 1.0,
         displayMode = 1,
+        transparent = false,
         open = false,
         exportFilePath = "kill-counters-export.txt"
     }
@@ -1482,6 +1549,10 @@ local function KillCounterDetailWindow(killCounter)
             return
         end
 
+        if this.transparent then
+            imgui.PushStyleColor("WindowBg", 0.0, 0.0, 0.0, 0.0)
+        end
+
         local success
 
         imgui.SetNextWindowSize(800, 400, 'FirstUseEver')
@@ -1498,6 +1569,10 @@ local function KillCounterDetailWindow(killCounter)
         _showExport()
 
         imgui.End()
+
+        if this.transparent then
+            imgui.PopStyleColor()
+        end
     end
 
     return this
@@ -1564,6 +1639,10 @@ local function SessionInfoWindow(session)
             return
         end
 
+        if this.transparent then
+            imgui.PushStyleColor("WindowBg", 0.0, 0.0, 0.0, 0.0)
+        end
+
         local success
 
         imgui.SetNextWindowSize(310, 200, 'FirstUseEver')
@@ -1573,6 +1652,10 @@ local function SessionInfoWindow(session)
         _showSessionInfo()
 
         imgui.End()
+
+        if this.transparent then
+            imgui.PopStyleColor()
+        end
     end
 
     return this
@@ -1669,24 +1752,28 @@ local function init()
     _GlobalCounterWindow.title = "Kill Counter - Global"
     _GlobalCounterWindow.fontScale = _Configuration.fontScale
     _GlobalCounterWindow.displayMode = _Configuration.globalCounterWindowDisplayMode
+    _GlobalCounterWindow.transparent = _Configuration.globalCounterWindowTransparent
     _GlobalCounterWindow.open = _Configuration.globalCounterWindow
 
     _GlobalCounterDetailWindow = KillCounterDetailWindow(_GlobalCounter)
     _GlobalCounterDetailWindow.title = "Kill Counter - Global Detail"
     _GlobalCounterDetailWindow.fontScale = _Configuration.fontScale
     _GlobalCounterDetailWindow.displayMode = _Configuration.globalCounterDetailWindowDisplayMode
+    _GlobalCounterDetailWindow.transparent = _Configuration.globalCounterDetailWindowTransparent
     _GlobalCounterDetailWindow.open = _Configuration.globalCounterDetailWindow
 
     _SessionCounterWindow = KillCounterWindow(_SessionCounter)
     _SessionCounterWindow.title = "Kill Counter - Session"
     _SessionCounterWindow.fontScale = _Configuration.fontScale
     _SessionCounterWindow.displayMode = _Configuration.sessionCounterWindowDisplayMode
+    _SessionCounterWindow.transparent = _Configuration.sessionCounterWindowTransparent
     _SessionCounterWindow.open = _Configuration.sessionCounterWindow
 
     _SessionCounterDetailWindow = KillCounterDetailWindow(_SessionCounter)
     _SessionCounterDetailWindow.title = "Kill Counter - Session Detail"
     _SessionCounterDetailWindow.fontScale = _Configuration.fontScale
     _SessionCounterDetailWindow.displayMode = _Configuration.sessionCounterDetailWindowDisplayMode
+    _SessionCounterDetailWindow.transparent = _Configuration.sessionCounterDetailWindowTransparent
     _SessionCounterDetailWindow.open = _Configuration.sessionCounterDetailWindow
     _SessionCounterDetailWindow.exportFilePath = "session-counters-export.txt"
 
@@ -1694,6 +1781,7 @@ local function init()
     _SessionInfoWindow.title = "Kill Counter - Session Info"
     _SessionInfoWindow.fontScale = _Configuration.fontScale
     _SessionInfoWindow.displayMode = _Configuration.sessionInfoWindowDisplayMode
+    _SessionInfoWindow.transparent = _Configuration.sessionInfoWindowTransparent
     _SessionInfoWindow.open = _Configuration.sessionInfoWindow
 
     _ConfigurationWindow = ConfigurationWindow(_Configuration)
