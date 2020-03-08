@@ -1480,13 +1480,13 @@ local function KillCounterWindow(killCounter)
         displayMode = 1,
         transparent = false,
         open = false,
-		titleBar = '',
-		resize = '',
-		move = ''
+        titleBar = '',
+        resize = '',
+        move = ''
     }
 
     local _killCounter = killCounter
-	local _firstRender = true
+    local _firstRender = true
 
     local _showCounters = function()
         local i
@@ -1530,13 +1530,13 @@ local function KillCounterWindow(killCounter)
         end
 
         local success
-		local resize = this.resize
+        local resize = this.resize
 
-		-- imgui does not honor size settings if resize is disabled
-		if (_firstRender) then
-			resize = ''
-			_firstRender = false
-		end
+        -- imgui does not honor size settings if resize is disabled
+        if (_firstRender) then
+            resize = ''
+            _firstRender = false
+        end
 
         imgui.SetNextWindowSize(270, 380, 'FirstUseEver')
         success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, resize, this.move})
@@ -1640,13 +1640,13 @@ local function SessionInfoWindow(session)
         title = "Kill Counter - Session Info",
         displayMode = 1,
         open = false,
-		titleBar = '',
-		resize = '',
-		move = ''
+        titleBar = '',
+        resize = '',
+        move = ''
     }
 
     local _session = session
-	local _firstRender = true
+    local _firstRender = true
 
     local _getValueOverTimeSpent = function(value, timeSpent)
         local valueOverTime = value / timeSpent
@@ -1705,13 +1705,13 @@ local function SessionInfoWindow(session)
         end
 
         local success
-		local resize = this.resize
+        local resize = this.resize
 
-		-- imgui does not honor size settings if resize is disabled
-		if (_firstRender) then
-			resize = ''
-			_firstRender = false
-		end
+        -- imgui does not honor size settings if resize is disabled
+        if (_firstRender) then
+            resize = ''
+            _firstRender = false
+        end
 
         imgui.SetNextWindowSize(310, 200, 'FirstUseEver')
         success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, resize, this.move})
@@ -1792,13 +1792,13 @@ local function present()
         _Configuration.sessionInfoWindow = _SessionInfoWindow.open
         _Configuration.serialize(_ConfigurationPath)
 
-		_GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
-		_GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
-		_GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
+        _GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
+        _GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
+        _GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
 
-		_SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
-		_SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
-		_SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
+        _SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
+        _SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
+        _SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
     end
 
     if _GlobalCounter.modified then
