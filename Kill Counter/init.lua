@@ -36,7 +36,7 @@ local _SectionID = 0x00A9C4D8
 local _Location = 0x00AAFC9C
 
 local _EntityCount = 0x00AAE164
-local _EntityArray = 0x00AAD720
+local _EntityArray = 0
 
 local _MonsterUnitxtID = 0x378
 local _MonsterHP = 0x334
@@ -1730,6 +1730,12 @@ local function SessionInfoWindow(session)
 end
 
 local function present()
+    if _EntityArray == 0 then
+        -- Get the address of the entity array from one of the instructions that references it.
+        -- Works on base client and on a client patched with a different array.
+        _EntityArray = pso.read_u32(0x7B4BA0 + 2)
+    end
+	
     local isMenuOpen = (pso.read_u32(_MenuPointer) == 1)
 
     _Dimensions.update()
