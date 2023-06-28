@@ -1889,7 +1889,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.1.3",
+        version = "2.1.4",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present

@@ -11,7 +11,7 @@ For more in-depth information on how the Kill Counter works, please visit the
 [wiki](https://github.com/StephenCWills/psobb-kill-counter/wiki/How-it-works).
 
 ## Installation
-* Download [version 0.3.4](https://github.com/Solybum/psobbaddonplugin/releases/latest)
+* Download the [latest version](https://github.com/Solybum/psobbaddonplugin/releases/latest)
   of the [psobbaddonplugin](https://github.com/Solybum/psobbaddonplugin)
   project (bbmod.zip)
 * Extract the `dinput8.dll` file and place it in the root directory of your
