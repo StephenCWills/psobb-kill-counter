@@ -1499,7 +1499,7 @@ local function ConfigurationWindow(configuration)
         local success
     
         imgui.SetNextWindowSize(500, 400, 'FirstUseEver')
-        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, this.resize, this.move})
+        success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
     
         _hasChanged = false
@@ -1672,7 +1672,7 @@ local function KillCounterDetailWindow(killCounter)
         local success
 
         imgui.SetNextWindowSize(800, 400, 'FirstUseEver')
-        success,this.open = imgui.Begin(this.title, this.open, {this.titleBar, this.resize, this.move})
+        success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
 
         success,this.exportFilePath = imgui.InputText("", this.exportFilePath, 260)
