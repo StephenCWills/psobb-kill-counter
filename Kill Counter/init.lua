@@ -1495,13 +1495,13 @@ local function ConfigurationWindow(configuration)
         if not this.open then
             return
         end
-    
+
         local success
-    
+
         imgui.SetNextWindowSize(500, 400, 'FirstUseEver')
         success,this.open = imgui.Begin(this.title, this.open)
         imgui.SetWindowFontScale(this.fontScale)
-    
+
         _hasChanged = false
         _showWindowSettings()
         _showGlobalCounterSettings()
@@ -1510,7 +1510,7 @@ local function ConfigurationWindow(configuration)
         _showSessionCounterDetailSettings()
         _showSessionInfoSettings()
         _showAdvancedSettings()
-    
+
         imgui.End()
     end
 
@@ -1794,7 +1794,7 @@ local function present()
         -- Works on base client and on a client patched with a different array.
         _EntityArray = pso.read_u32(0x7B4BA0 + 2)
     end
-	
+
     local isMenuOpen = (pso.read_u32(_MenuPointer) == 1)
 
     _Dimensions.update()
@@ -1856,23 +1856,23 @@ local function present()
         _Configuration.sessionCounterDetailWindow = _SessionCounterDetailWindow.open
         _Configuration.sessionInfoWindow = _SessionInfoWindow.open
         _Configuration.serialize(_ConfigurationPath)
-    
+
         _GlobalCounterWindow.resize = (_Configuration.globalCounterResizeLocked and 'NoResize' or '')
         _GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
         _GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
-    
+
         _GlobalCounterDetailWindow.resize = (_Configuration.globalCounterDetailResizeLocked and 'NoResize' or '')
         _GlobalCounterDetailWindow.move = (_Configuration.globalCounterDetailMoveLocked and 'NoMove' or '')
         _GlobalCounterDetailWindow.titleBar = (_Configuration.globalCounterDetailNoTitleBar and 'NoTitleBar' or '')
-    
+
         _SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
         _SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
         _SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
-    
+
         _SessionCounterDetailWindow.resize = (_Configuration.sessionCounterDetailResizeLocked and 'NoResize' or '')
         _SessionCounterDetailWindow.move = (_Configuration.sessionCounterDetailMoveLocked and 'NoMove' or '')
         _SessionCounterDetailWindow.titleBar = (_Configuration.sessionCounterDetailNoTitleBar and 'NoTitleBar' or '')
-    
+
         _SessionInfoWindow.resize = (_Configuration.sessionInfoResizeLocked and 'NoResize' or '')
         _SessionInfoWindow.move = (_Configuration.sessionInfoMoveLocked and 'NoMove' or '')
         _SessionInfoWindow.titleBar = (_Configuration.sessionInfoNoTitleBar and 'NoTitleBar' or '')
