@@ -89,6 +89,11 @@ local function LoadConfiguration()
     _Configuration.globalCounterSectionID = _Configuration.globalCounterSectionID or 0
     _Configuration.globalCounterArea = _Configuration.globalCounterArea or 0
 
+    _Configuration.globalCounterDetailDimensionsLocked = (_Configuration.globalCounterDetailDimensionsLocked ~= nil) and _Configuration.globalCounterDetailDimensionsLocked
+    _Configuration.globalCounterDetailResizeLocked = (_Configuration.globalCounterDetailResizeLocked ~= nil) and _Configuration.globalCounterDetailResizeLocked
+    _Configuration.globalCounterDetailMoveLocked = (_Configuration.globalCounterDetailMoveLocked ~= nil) and _Configuration.globalCounterDetailMoveLocked
+    _Configuration.globalCounterDetailNoTitleBar = (_Configuration.globalCounterDetailNoTitleBar ~= nil) and _Configuration.globalCounterDetailNoTitleBar
+
     _Configuration.sessionCounterDimensionsLocked = (_Configuration.sessionCounterDimensionsLocked ~= nil) and _Configuration.sessionCounterDimensionsLocked
     _Configuration.sessionCounterResizeLocked = (_Configuration.sessionCounterResizeLocked ~= nil) and _Configuration.sessionCounterResizeLocked
     _Configuration.sessionCounterMoveLocked = (_Configuration.sessionCounterMoveLocked ~= nil) and _Configuration.sessionCounterMoveLocked
@@ -97,6 +102,16 @@ local function LoadConfiguration()
     _Configuration.sessionCounterEpisode = _Configuration.sessionCounterEpisode or 0
     _Configuration.sessionCounterSectionID = _Configuration.sessionCounterSectionID or 0
     _Configuration.sessionCounterArea = _Configuration.sessionCounterArea or 0
+
+    _Configuration.sessionCounterDetailDimensionsLocked = (_Configuration.sessionCounterDetailDimensionsLocked ~= nil) and _Configuration.sessionCounterDetailDimensionsLocked
+    _Configuration.sessionCounterDetailResizeLocked = (_Configuration.sessionCounterDetailResizeLocked ~= nil) and _Configuration.sessionCounterDetailResizeLocked
+    _Configuration.sessionCounterDetailMoveLocked = (_Configuration.sessionCounterDetailMoveLocked ~= nil) and _Configuration.sessionCounterDetailMoveLocked
+    _Configuration.sessionCounterDetailNoTitleBar = (_Configuration.sessionCounterDetailNoTitleBar ~= nil) and _Configuration.sessionCounterDetailNoTitleBar
+
+    _Configuration.sessionInfoDimensionsLocked = (_Configuration.sessionInfoDimensionsLocked ~= nil) and _Configuration.sessionInfoDimensionsLocked
+    _Configuration.sessionInfoResizeLocked = (_Configuration.sessionInfoResizeLocked ~= nil) and _Configuration.sessionInfoResizeLocked
+    _Configuration.sessionInfoMoveLocked = (_Configuration.sessionInfoMoveLocked ~= nil) and _Configuration.sessionInfoMoveLocked
+    _Configuration.sessionInfoNoTitleBar = (_Configuration.sessionInfoNoTitleBar ~= nil) and _Configuration.sessionInfoNoTitleBar
 
     _Configuration.globalCounterWindowDisplayMode = _Configuration.globalCounterWindowDisplayMode or 1
     _Configuration.globalCounterDetailWindowDisplayMode = _Configuration.globalCounterDetailWindowDisplayMode or 1
@@ -145,6 +160,11 @@ local function LoadConfiguration()
             io.write(string.format("    globalCounterSectionID = %f,\n", _Configuration.globalCounterSectionID))
             io.write(string.format("    globalCounterArea = %f,\n", _Configuration.globalCounterArea))
             io.write("\n")
+            io.write(string.format("    globalCounterDetailDimensionsLocked = %s,\n", tostring(_Configuration.globalCounterDetailDimensionsLocked)))
+            io.write(string.format("    globalCounterDetailResizeLocked = %s,\n", tostring(_Configuration.globalCounterDetailResizeLocked)))
+            io.write(string.format("    globalCounterDetailMoveLocked = %s,\n", tostring(_Configuration.globalCounterDetailMoveLocked)))
+            io.write(string.format("    globalCounterDetailNoTitleBar = %s,\n", tostring(_Configuration.globalCounterDetailNoTitleBar)))
+            io.write("\n")
             io.write(string.format("    sessionCounterDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDimensionsLocked)))
             io.write(string.format("    sessionCounterResizeLocked = %s,\n", tostring(_Configuration.sessionCounterResizeLocked)))
             io.write(string.format("    sessionCounterMoveLocked = %s,\n", _Configuration.sessionCounterMoveLocked))
@@ -153,6 +173,16 @@ local function LoadConfiguration()
             io.write(string.format("    sessionCounterEpisode = %f,\n", _Configuration.sessionCounterEpisode))
             io.write(string.format("    sessionCounterSectionID = %f,\n", _Configuration.sessionCounterSectionID))
             io.write(string.format("    sessionCounterArea = %f,\n", _Configuration.sessionCounterArea))
+            io.write("\n")
+            io.write(string.format("    sessionCounterDetailDimensionsLocked = %s,\n", tostring(_Configuration.sessionCounterDetailDimensionsLocked)))
+            io.write(string.format("    sessionCounterDetailResizeLocked = %s,\n", tostring(_Configuration.sessionCounterDetailResizeLocked)))
+            io.write(string.format("    sessionCounterDetailMoveLocked = %s,\n", tostring(_Configuration.sessionCounterDetailMoveLocked)))
+            io.write(string.format("    sessionCounterDetailNoTitleBar = %s,\n", tostring(_Configuration.sessionCounterDetailNoTitleBar)))
+            io.write("\n")
+            io.write(string.format("    sessionInfoDimensionsLocked = %s,\n", tostring(_Configuration.sessionInfoDimensionsLocked)))
+            io.write(string.format("    sessionInfoResizeLocked = %s,\n", tostring(_Configuration.sessionInfoResizeLocked)))
+            io.write(string.format("    sessionInfoMoveLocked = %s,\n", tostring(_Configuration.sessionInfoMoveLocked)))
+            io.write(string.format("    sessionInfoNoTitleBar = %s,\n", tostring(_Configuration.sessionInfoNoTitleBar)))
             io.write("\n")
             io.write(string.format("    globalCounterWindowDisplayMode = %f,\n", _Configuration.globalCounterWindowDisplayMode))
             io.write(string.format("    globalCounterDetailWindowDisplayMode = %f,\n", _Configuration.globalCounterDetailWindowDisplayMode))
@@ -1024,6 +1054,7 @@ local function ConfigurationWindow(configuration)
             this.globalCounterWindow.fontScale = this.fontScale
             this.globalCounterDetailWindow.fontScale = this.fontScale
             this.sessionCounterWindow.fontScale = this.fontScale
+            this.sessionCounterDetailWindow.fontScale = this.fontScale
             this.sessionInfoWindow.fontScale = this.fontScale
             imgui.PopItemWidth()
 
@@ -1033,6 +1064,7 @@ local function ConfigurationWindow(configuration)
 
     local _showGlobalCounterSettings = function()
         local success
+        local mode
 
         if imgui.TreeNodeEx("Global Kill Counters") then
             if imgui.Checkbox("Enabled", this.globalCounterWindow.open) then
@@ -1061,6 +1093,24 @@ local function ConfigurationWindow(configuration)
                 _configuration.globalCounterNoTitleBar = not _configuration.globalCounterNoTitleBar
                 _hasChanged = true
             end
+
+            imgui.PushID("Global Counter Display")
+            imgui.Text("Display Mode")
+            imgui.SameLine(0, 10)
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Global Counter Display", _configuration.globalCounterWindowDisplayMode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+            if imgui.Checkbox("Transparent", _configuration.globalCounterWindowTransparent) then
+                _configuration.globalCounterWindowTransparent = not _configuration.globalCounterWindowTransparent
+                this.globalCounterWindow.transparent = _configuration.globalCounterWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
+
+            _hasChanged = _hasChanged or (_configuration.globalCounterWindowDisplayMode ~= mode)
+            _configuration.globalCounterWindowDisplayMode = mode
+            this.globalCounterWindow.displayMode = mode
 
             local difficultyLabelSize = imgui.CalcTextSize("Difficulty")
             local episodeLabelSize = imgui.CalcTextSize("Episode")
@@ -1148,8 +1198,57 @@ local function ConfigurationWindow(configuration)
         end
     end
 
+    local _showGlobalCounterDetailSettings = function()
+        local success
+        local mode
+
+        if imgui.TreeNodeEx("Global Kill Counter Detail") then
+            if imgui.Checkbox("Enabled", this.globalCounterDetailWindow.open) then
+                this.globalCounterDetailWindow.open = not this.globalCounterDetailWindow.open
+            end
+
+            if imgui.Checkbox("No resize", _configuration.globalCounterDetailResizeLocked) then
+                _configuration.globalCounterDetailResizeLocked = not _configuration.globalCounterDetailResizeLocked
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No move", _configuration.globalCounterDetailMoveLocked) then
+                _configuration.globalCounterDetailMoveLocked = not _configuration.globalCounterDetailMoveLocked
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No title bar", _configuration.globalCounterDetailNoTitleBar) then
+                _configuration.globalCounterDetailNoTitleBar = not _configuration.globalCounterDetailNoTitleBar
+                _hasChanged = true
+            end
+
+            imgui.PushID("Global Counter Detail Display")
+            imgui.Text("Display Mode")
+            imgui.SameLine(0, 10)
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Global Counter Detail Display", _configuration.globalCounterDetailWindowDisplayMode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+            if imgui.Checkbox("Transparent", _configuration.globalCounterDetailWindowTransparent) then
+                _configuration.globalCounterDetailWindowTransparent = not _configuration.globalCounterDetailWindowTransparent
+                this.globalCounterDetailWindow.transparent = _configuration.globalCounterDetailWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
+
+            _hasChanged = _hasChanged or (_configuration.globalCounterDetailWindowDisplayMode ~= mode)
+            _configuration.globalCounterDetailWindowDisplayMode = mode
+            this.globalCounterDetailWindow.displayMode = mode
+
+            imgui.TreePop()
+        end
+    end
+
     local _showSessionCounterSettings = function()
         local success
+        local mode
 
         if imgui.TreeNodeEx("Session Kill Counters") then
             if imgui.Checkbox("Enabled", this.sessionCounterWindow.open) then
@@ -1179,6 +1278,24 @@ local function ConfigurationWindow(configuration)
                 _hasChanged = true
             end
 
+            imgui.PushID("Session Counter Display")
+            imgui.Text("Display Mode")
+            imgui.SameLine(0, 10)
+            imgui.PushItemWidth(125)
+            success,mode = imgui.Combo("##Session Counter Display", _configuration.sessionCounterWindowDisplayMode, _DisplayModes, table.getn(_DisplayModes))
+            imgui.PopItemWidth()
+            imgui.SameLine(0, 10)
+            if imgui.Checkbox("Transparent", _configuration.sessionCounterWindowTransparent) then
+                _configuration.sessionCounterWindowTransparent = not _configuration.sessionCounterWindowTransparent
+                this.sessionCounterWindow.transparent = _configuration.sessionCounterWindowTransparent
+                _hasChanged = true
+            end
+            imgui.PopID()
+
+            _hasChanged = _hasChanged or (_configuration.sessionCounterWindowDisplayMode ~= mode)
+            _configuration.sessionCounterWindowDisplayMode = mode
+            this.sessionCounterWindow.displayMode = mode
+
             local difficultyLabelSize = imgui.CalcTextSize("Difficulty")
             local episodeLabelSize = imgui.CalcTextSize("Episode")
             local sectionIDLabelSize = imgui.CalcTextSize("Section ID")
@@ -1200,7 +1317,7 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
             imgui.SameLine(0, 50)
 
-            if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.globalCounterDimensionsLocked then
+            if (_configuration.sessionCounterDifficulty ~= difficulty - 1) or _configuration.sessionCounterDimensionsLocked then
                 _configuration.sessionCounterDifficulty = difficulty - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
@@ -1218,7 +1335,7 @@ local function ConfigurationWindow(configuration)
             success,episode = imgui.Combo("##Episode", episode, _episodes, table.getn(_episodes))
             imgui.PopItemWidth()
 
-            if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.globalCounterDimensionsLocked then
+            if (_configuration.sessionCounterEpisode ~= episode - 1) or _configuration.sessionCounterDimensionsLocked then
                 _configuration.sessionCounterEpisode = episode - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
@@ -1237,7 +1354,7 @@ local function ConfigurationWindow(configuration)
             imgui.PopItemWidth()
             imgui.SameLine(0, 50)
 
-            if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.globalCounterDimensionsLocked then
+            if (_configuration.sessionCounterSectionID ~= sectionID - 1) or _configuration.sessionCounterDimensionsLocked then
                 _configuration.sessionCounterSectionID = sectionID - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
@@ -1255,7 +1372,7 @@ local function ConfigurationWindow(configuration)
             success,area = imgui.Combo("##Area", area, _areas, table.getn(_areas))
             imgui.PopItemWidth()
 
-            if (_configuration.sessionCounterArea ~= area - 1) or _configuration.globalCounterDimensionsLocked then
+            if (_configuration.sessionCounterArea ~= area - 1) or _configuration.sessionCounterDimensionsLocked then
                 _configuration.sessionCounterArea = area - 1
                 _configuration.sessionCounterDimensionsLocked = true
                 _hasChanged = true
@@ -1265,125 +1382,39 @@ local function ConfigurationWindow(configuration)
         end
     end
 
-    local _showDisplayModes = function()
-        local success, mode
+    local _showSessionCounterDetailSettings = function()
+        local success
+        local mode
 
-        if imgui.TreeNodeEx("Window Display Modes") then
-            local globalKillCountersLabel = "Global Kill Counters"
-            local globalKillCountersDetailLabel = "Global Kill Counter Detail"
-            local sessionKillCountersLabel = "Session Kill Counters"
-            local sessionKillCountersDetailLabel = "Session Kill Counter Detail"
-            local sessionInfoLabel = "Session Info Counters"
-
-            local globalKillCountersLabelWidth = imgui.CalcTextSize(globalKillCountersLabel)
-            local globalKillCountersDetailLabelWidth = imgui.CalcTextSize(globalKillCountersDetailLabel)
-            local sessionKillCountersLabelWidth = imgui.CalcTextSize(sessionKillCountersLabel)
-            local sessionKillCountersDetailLabelWidth = imgui.CalcTextSize(sessionKillCountersDetailLabel)
-            local sessionInfoLabelWidth = imgui.CalcTextSize(sessionInfoLabel)
-
-            local widths = {
-                globalKillCountersLabelWidth,
-                globalKillCountersDetailLabelWidth,
-                sessionKillCountersLabelWidth,
-                sessionKillCountersDetailLabelWidth,
-                sessionInfoLabelWidth
-            }
-
-            local labelWidth = 0
-
-            for _,width in ipairs(widths) do
-                labelWidth = math.max(labelWidth, width)
+        if imgui.TreeNodeEx("Session Kill Counter Detail") then
+            if imgui.Checkbox("Enabled", this.sessionCounterDetailWindow.open) then
+                this.sessionCounterDetailWindow.open = not this.sessionCounterDetailWindow.open
             end
 
-            -- Global Kill Counter Window Display Mode
-            mode = _configuration.globalCounterWindowDisplayMode
-
-            imgui.Dummy(0, 0)
-            imgui.SameLine(0, labelWidth - globalKillCountersLabelWidth)
-            imgui.Text(globalKillCountersLabel)
-            imgui.SameLine(0, 10)
-
-            imgui.PushItemWidth(125)
-            success,mode = imgui.Combo("##Global Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
-            imgui.PopItemWidth()
-            imgui.SameLine(0, 10)
-
-            imgui.PushID("Global Counter")
-            if imgui.Checkbox("Transparent", _configuration.globalCounterWindowTransparent) then
-                _configuration.globalCounterWindowTransparent = not _configuration.globalCounterWindowTransparent
-                this.globalCounterWindow.transparent = _configuration.globalCounterWindowTransparent
+            if imgui.Checkbox("No resize", _configuration.sessionCounterDetailResizeLocked) then
+                _configuration.sessionCounterDetailResizeLocked = not _configuration.sessionCounterDetailResizeLocked
                 _hasChanged = true
             end
-            imgui.PopID()
 
-            _hasChanged = _hasChanged or (_configuration.globalCounterWindowDisplayMode ~= mode)
-            _configuration.globalCounterWindowDisplayMode = mode
-            this.globalCounterWindow.displayMode = mode
-
-            -- Global Kill Counter Detail Window Display Mode
-            mode = _configuration.globalCounterDetailWindowDisplayMode
-
-            imgui.Dummy(0, 0)
-            imgui.SameLine(0, labelWidth - globalKillCountersDetailLabelWidth)
-            imgui.Text(globalKillCountersDetailLabel)
-            imgui.SameLine(0, 10)
-
-            imgui.PushItemWidth(125)
-            success,mode = imgui.Combo("##Global Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
-            imgui.PopItemWidth()
-            imgui.SameLine(0, 10)
-
-            imgui.PushID("Global Counter Detail")
-            if imgui.Checkbox("Transparent", _configuration.globalCounterDetailWindowTransparent) then
-                _configuration.globalCounterDetailWindowTransparent = not _configuration.globalCounterDetailWindowTransparent
-                this.globalCounterDetailWindow.transparent = _configuration.globalCounterDetailWindowTransparent
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No move", _configuration.sessionCounterDetailMoveLocked) then
+                _configuration.sessionCounterDetailMoveLocked = not _configuration.sessionCounterDetailMoveLocked
                 _hasChanged = true
             end
-            imgui.PopID()
 
-            _hasChanged = _hasChanged or (_configuration.globalCounterDetailWindowDisplayMode ~= mode)
-            _configuration.globalCounterDetailWindowDisplayMode = mode
-            this.globalCounterDetailWindow.displayMode = mode
-
-            -- Session Kill Counter Window Display Mode
-            mode = _configuration.sessionCounterWindowDisplayMode
-
-            imgui.Dummy(0, 0)
-            imgui.SameLine(0, labelWidth - sessionKillCountersLabelWidth)
-            imgui.Text(sessionKillCountersLabel)
-            imgui.SameLine(0, 10)
-
-            imgui.PushItemWidth(125)
-            success,mode = imgui.Combo("##Session Kill Counters", mode, _DisplayModes, table.getn(_DisplayModes))
-            imgui.PopItemWidth()
-            imgui.SameLine(0, 10)
-
-            imgui.PushID("Session Counter")
-            if imgui.Checkbox("Transparent", _configuration.sessionCounterWindowTransparent) then
-                _configuration.sessionCounterWindowTransparent = not _configuration.sessionCounterWindowTransparent
-                this.sessionCounterWindow.transparent = _configuration.sessionCounterWindowTransparent
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No title bar", _configuration.sessionCounterDetailNoTitleBar) then
+                _configuration.sessionCounterDetailNoTitleBar = not _configuration.sessionCounterDetailNoTitleBar
                 _hasChanged = true
             end
-            imgui.PopID()
 
-            _hasChanged = _hasChanged or (_configuration.sessionCounterWindowDisplayMode ~= mode)
-            _configuration.sessionCounterWindowDisplayMode = mode
-            this.sessionCounterWindow.displayMode = mode
-
-            -- Session Kill Counter Detail Window Display Mode
-            mode = _configuration.sessionCounterDetailWindowDisplayMode
-
-            imgui.Dummy(0, 0)
-            imgui.SameLine(0, labelWidth - sessionKillCountersDetailLabelWidth)
-            imgui.Text(sessionKillCountersDetailLabel)
+            imgui.PushID("Session Counter Detail Display")
+            imgui.Text("Display Mode")
             imgui.SameLine(0, 10)
-
             imgui.PushItemWidth(125)
-            success,mode = imgui.Combo("##Session Kill Counter Detail", mode, _DisplayModes, table.getn(_DisplayModes))
+            success,mode = imgui.Combo("##Session Counter Detail Display", _configuration.sessionCounterDetailWindowDisplayMode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
             imgui.SameLine(0, 10)
-
-            imgui.PushID("Session Counter Detail")
             if imgui.Checkbox("Transparent", _configuration.sessionCounterDetailWindowTransparent) then
                 _configuration.sessionCounterDetailWindowTransparent = not _configuration.sessionCounterDetailWindowTransparent
                 this.sessionCounterDetailWindow.transparent = _configuration.sessionCounterDetailWindowTransparent
@@ -1395,20 +1426,43 @@ local function ConfigurationWindow(configuration)
             _configuration.sessionCounterDetailWindowDisplayMode = mode
             this.sessionCounterDetailWindow.displayMode = mode
 
-            -- Session Info Counter Window Display Mode
-            mode = _configuration.sessionInfoWindowDisplayMode
+            imgui.TreePop()
+        end
+    end
 
-            imgui.Dummy(0, 0)
-            imgui.SameLine(0, labelWidth - sessionInfoLabelWidth)
-            imgui.Text(sessionInfoLabel)
+    local _showSessionInfoSettings = function()
+        local success
+        local mode
+
+        if imgui.TreeNodeEx("Session Info Counters") then
+            if imgui.Checkbox("Enabled", this.sessionInfoWindow.open) then
+                this.sessionInfoWindow.open = not this.sessionInfoWindow.open
+            end
+
+            if imgui.Checkbox("No resize", _configuration.sessionInfoResizeLocked) then
+                _configuration.sessionInfoResizeLocked = not _configuration.sessionInfoResizeLocked
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No move", _configuration.sessionInfoMoveLocked) then
+                _configuration.sessionInfoMoveLocked = not _configuration.sessionInfoMoveLocked
+                _hasChanged = true
+            end
+
+            imgui.SameLine(0, 50)
+            if imgui.Checkbox("No title bar", _configuration.sessionInfoNoTitleBar) then
+                _configuration.sessionInfoNoTitleBar = not _configuration.sessionInfoNoTitleBar
+                _hasChanged = true
+            end
+
+            imgui.PushID("Session Info Display")
+            imgui.Text("Display Mode")
             imgui.SameLine(0, 10)
-
             imgui.PushItemWidth(125)
-            success,mode = imgui.Combo("##Session Info Counters", mode, _DisplayModes, table.getn(_DisplayModes))
+            success,mode = imgui.Combo("##Session Info Display", _configuration.sessionInfoWindowDisplayMode, _DisplayModes, table.getn(_DisplayModes))
             imgui.PopItemWidth()
             imgui.SameLine(0, 10)
-
-            imgui.PushID("Session Info")
             if imgui.Checkbox("Transparent", _configuration.sessionInfoWindowTransparent) then
                 _configuration.sessionInfoWindowTransparent = not _configuration.sessionInfoWindowTransparent
                 this.sessionInfoWindow.transparent = _configuration.sessionInfoWindowTransparent
@@ -1451,8 +1505,10 @@ local function ConfigurationWindow(configuration)
         _hasChanged = false
         _showWindowSettings()
         _showGlobalCounterSettings()
+        _showGlobalCounterDetailSettings()
         _showSessionCounterSettings()
-        _showDisplayModes()
+        _showSessionCounterDetailSettings()
+        _showSessionInfoSettings()
         _showAdvancedSettings()
 
         imgui.End()
@@ -1561,6 +1617,9 @@ local function KillCounterDetailWindow(killCounter)
         displayMode = 1,
         transparent = false,
         open = false,
+        titleBar = '',
+        resize = '',
+        move = '',
         exportFilePath = "kill-counters-export.txt"
     }
 
@@ -1735,7 +1794,7 @@ local function present()
         -- Works on base client and on a client patched with a different array.
         _EntityArray = pso.read_u32(0x7B4BA0 + 2)
     end
-	
+
     local isMenuOpen = (pso.read_u32(_MenuPointer) == 1)
 
     _Dimensions.update()
@@ -1802,9 +1861,21 @@ local function present()
         _GlobalCounterWindow.move = (_Configuration.globalCounterMoveLocked and 'NoMove' or '')
         _GlobalCounterWindow.titleBar = (_Configuration.globalCounterNoTitleBar and 'NoTitleBar' or '')
 
+        _GlobalCounterDetailWindow.resize = (_Configuration.globalCounterDetailResizeLocked and 'NoResize' or '')
+        _GlobalCounterDetailWindow.move = (_Configuration.globalCounterDetailMoveLocked and 'NoMove' or '')
+        _GlobalCounterDetailWindow.titleBar = (_Configuration.globalCounterDetailNoTitleBar and 'NoTitleBar' or '')
+
         _SessionCounterWindow.resize = (_Configuration.sessionCounterResizeLocked and 'NoResize' or '')
         _SessionCounterWindow.move = (_Configuration.sessionCounterMoveLocked and 'NoMove' or '')
         _SessionCounterWindow.titleBar = (_Configuration.sessionCounterNoTitleBar and 'NoTitleBar' or '')
+
+        _SessionCounterDetailWindow.resize = (_Configuration.sessionCounterDetailResizeLocked and 'NoResize' or '')
+        _SessionCounterDetailWindow.move = (_Configuration.sessionCounterDetailMoveLocked and 'NoMove' or '')
+        _SessionCounterDetailWindow.titleBar = (_Configuration.sessionCounterDetailNoTitleBar and 'NoTitleBar' or '')
+
+        _SessionInfoWindow.resize = (_Configuration.sessionInfoResizeLocked and 'NoResize' or '')
+        _SessionInfoWindow.move = (_Configuration.sessionInfoMoveLocked and 'NoMove' or '')
+        _SessionInfoWindow.titleBar = (_Configuration.sessionInfoNoTitleBar and 'NoTitleBar' or '')
     end
 
     if _GlobalCounter.modified then
@@ -1846,6 +1917,9 @@ local function init()
     _GlobalCounterDetailWindow.displayMode = _Configuration.globalCounterDetailWindowDisplayMode
     _GlobalCounterDetailWindow.transparent = _Configuration.globalCounterDetailWindowTransparent
     _GlobalCounterDetailWindow.open = _Configuration.globalCounterDetailWindow
+    _GlobalCounterDetailWindow.resize = (_Configuration.globalCounterDetailResizeLocked and 'NoResize' or '')
+    _GlobalCounterDetailWindow.move = (_Configuration.globalCounterDetailMoveLocked and 'NoMove' or '')
+    _GlobalCounterDetailWindow.titleBar = (_Configuration.globalCounterDetailNoTitleBar and 'NoTitleBar' or '')
 
     _SessionCounterWindow = KillCounterWindow(_SessionCounter)
     _SessionCounterWindow.title = "Kill Counter - Session"
@@ -1864,6 +1938,9 @@ local function init()
     _SessionCounterDetailWindow.transparent = _Configuration.sessionCounterDetailWindowTransparent
     _SessionCounterDetailWindow.open = _Configuration.sessionCounterDetailWindow
     _SessionCounterDetailWindow.exportFilePath = "session-counters-export.txt"
+    _SessionCounterDetailWindow.resize = (_Configuration.sessionCounterDetailResizeLocked and 'NoResize' or '')
+    _SessionCounterDetailWindow.move = (_Configuration.sessionCounterDetailMoveLocked and 'NoMove' or '')
+    _SessionCounterDetailWindow.titleBar = (_Configuration.sessionCounterDetailNoTitleBar and 'NoTitleBar' or '')
 
     _SessionInfoWindow = SessionInfoWindow(_Session)
     _SessionInfoWindow.title = "Kill Counter - Session Info"
@@ -1871,6 +1948,9 @@ local function init()
     _SessionInfoWindow.displayMode = _Configuration.sessionInfoWindowDisplayMode
     _SessionInfoWindow.transparent = _Configuration.sessionInfoWindowTransparent
     _SessionInfoWindow.open = _Configuration.sessionInfoWindow
+    _SessionInfoWindow.resize = (_Configuration.sessionInfoResizeLocked and 'NoResize' or '')
+    _SessionInfoWindow.move = (_Configuration.sessionInfoMoveLocked and 'NoMove' or '')
+    _SessionInfoWindow.titleBar = (_Configuration.sessionInfoNoTitleBar and 'NoTitleBar' or '')
 
     _ConfigurationWindow = ConfigurationWindow(_Configuration)
     _ConfigurationWindow.fontScale = _Configuration.fontScale
@@ -1889,7 +1969,7 @@ local function init()
 
     return {
         name = "Kill Counter",
-        version = "2.1.4",
+        version = "2.1.5",
         author = "staphen",
         description = "Tracks number of enemies defeated while playing",
         present = present
